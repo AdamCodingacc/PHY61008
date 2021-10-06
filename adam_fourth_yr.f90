@@ -7,13 +7,13 @@ PROGRAM solar_sim
     DOUBLEPRECISION :: r(1:3, 1:7), v(1:3, 1:7), M(1:7), a_0(1:3, 1:7), a_1(1:3, 1:7)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
     DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time
-    INTEGER :: n, i, j, k, stepno !Define indexing integers
+    INTEGER :: num_yr, n, i, j, k, stepno !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
 !Initialize variables
 G = 6.67e-11
 n = 6
-dt = 100
+dt = 1000
 AU = 1.496e11
 M(1) = 1.99e30
 M(2) = 5.97e24
@@ -24,6 +24,7 @@ M(6) = 8.681e25
 M(7) = 1.024e26
 
 !Empty array variables
+num_yr = 0
 s_sq = 0
 time = 0
 GPE = 0
@@ -151,6 +152,11 @@ WRITE(6,*) "Would you like to save this run? (y/n)"
 READ *, lg !Store user input to decide whether to log data
 WRITE(6,*) ""
 
+WRITE(6,*) ""
+WRITE(6,*) "How many years would you like to simulate for?"
+READ *, num_yr !Store user input to decide whether to log data
+WRITE(6,*) ""
+
 !Open Log Files to write data to if requested
 IF (lg == 'y') THEN
     OPEN(2,file = 'Sun_Motion.csv')
@@ -192,21 +198,20 @@ DO
     s = sqrt(s_sq) !avoids having to sqrt for every body logged
 
     !Write every 250th step to log files
-    IF ((stepno == 250) .and. (lg == 'y')) THEN
-        WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1),',', s(1,1)
-        WRITE(3,*) time, ',', dist(1,1,2), ',', dist(2,1,2), ',', dist(3,1,2),',', s(1,2)
-        WRITE(4,*) time, ',', dist(1,1,3), ',', dist(2,1,3), ',', dist(3,1,3),',', s(1,3)
-        WRITE(7,*) time, ',', dist(1,1,4), ',', dist(2,1,4), ',', dist(3,1,4),',', s(1,4)
-        WRITE(8,*) time, ',', dist(1,1,5), ',', dist(2,1,5), ',', dist(3,1,5),',', s(1,5)
-        WRITE(9,*) time, ',', dist(1,1,6), ',', dist(2,1,6), ',', dist(3,1,6),',', s(1,6)
-        WRITE(10,*) time, ',', dist(1,1,7), ',', dist(2,1,7), ',', dist(3,1,7),',', s(1,7)
-        stepno = 0
+    IF ((MOD(stepno, 500) == 0) .and. (lg == 'y')) THEN
+        WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1), ',', s(1,1)
+        WRITE(3,*) time, ',', dist(1,1,2), ',', dist(2,1,2), ',', dist(3,1,2), ',', s(1,2)
+        WRITE(4,*) time, ',', dist(1,1,3), ',', dist(2,1,3), ',', dist(3,1,3), ',', s(1,3)
+        WRITE(7,*) time, ',', dist(1,1,4), ',', dist(2,1,4), ',', dist(3,1,4), ',', s(1,4)
+        WRITE(8,*) time, ',', dist(1,1,5), ',', dist(2,1,5), ',', dist(3,1,5), ',', s(1,5)
+        WRITE(9,*) time, ',', dist(1,1,6), ',', dist(2,1,6), ',', dist(3,1,6), ',', s(1,6)
+        WRITE(10,*) time, ',', dist(1,1,7), ',', dist(2,1,7), ',', dist(3,1,7), ',', s(1,7)
     END IF
 
     !update elapsed time
     time = time + dt
     stepno = stepno + 1
-    IF (time > 31536000) EXIT
+    IF (time > (num_yr * 31536000)) EXIT
 END DO
 
 
