@@ -76,11 +76,9 @@ v(2,7) = 5430 * -1. * sin(1.)
 v(3,7) = 0
 
 DO i = 1, n-1
-        DO k = 1,3
-                COM(k) = COM(k) + r(k,i)*M(i)
-                COV(k) = COV(k) + v(k,i)*M(i)
-        END DO
-Mtot = Mtot + M(i)
+    COM(:) = COM(:) + r(:,i)*M(i)
+    COV(:) = COV(:) + v(:,i)*M(i)
+    Mtot = Mtot + M(i)
 END DO
 
 !Correct for COM and COV
@@ -105,10 +103,10 @@ DO i = 1,n
 
                 GPE(i) = GPE(i) - G*M(i)*M(j)/sqrt(s_sq(i,j))
 
-                DO k = 1,3 !Loop over each dimension
-                    !Need + so each object does not overwrite previous
-                    a_0(k,i) = a_0(k,i) + (G * M(j) * (r(k,j) - r(k,i)) * (s_sq(i,j)**-1.5))
-                END DO
+
+                !Need + so each object does not overwrite previous
+                a_0(:,i) = a_0(:,i) + (G * M(j) * (r(:,j) - r(:,i)) * (s_sq(i,j)**-1.5))
+
             END DO
         END DO
 
@@ -156,10 +154,10 @@ WRITE(6,*) E_0
                 !Find absolute distance, s,  squared between bodies i & j
                 s_sq(i,j) = ((r(1,j) - r(1,i))**2 + (r(2,j) - r(2,i))**2 + (r(3,j) - r(3,i))**2)
 
-                DO k = 1,3
-                    !Find acceleration on object i in each dimension
-                    a_1(k,i) = a_1(k,i) + G * M(j) * (r(k,j) - r(k,i))*(s_sq(i,j)**-1.5)
-                END DO
+
+                !Find acceleration on object i in each dimension
+                a_1(:,i) = a_1(:,i) + G * M(j) * (r(:,j) - r(:,i))*(s_sq(i,j)**-1.5)
+
 
             END DO
         END DO
