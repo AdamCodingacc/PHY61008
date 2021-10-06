@@ -5,8 +5,10 @@ PROGRAM solar_sim
     IMPLICIT NONE
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
     DOUBLEPRECISION :: r(1:3, 1:7), v(1:3, 1:7), M(1:7), a_0(1:3, 1:7), a_1(1:3, 1:7)
-    DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), dt, G, time, GPE(1:7), absv_sq(1:7), E_0, E_1, Mtot, AU
-    INTEGER :: n, i, j, k !Define indexing integers
+    DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
+    DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time
+    INTEGER :: n, i, j, k, stepno !Define indexing integers
+    CHARACTER(LEN = 1) :: lg
 
 !Initialize variables
 G = 6.67e-11
@@ -144,36 +146,80 @@ WRITE(6,*) "Initial Energy of System (J)"
 WRITE(6,*) ""
 WRITE(6,*) E_0
 
+WRITE(6,*) ""
+WRITE(6,*) "Would you like to save this run? (y/n)"
+READ *, lg !Store user input to decide whether to log data
+WRITE(6,*) ""
 
-    DO
-        DO i = 1,n
-            DO j = 1,n
-            !skip loop if i & j same (no force exerted by body on self)
-            IF (i == j) CYCLE
+!Open Log Files to write data to if requested
+IF (lg == 'y') THEN
+    OPEN(2,file = 'Sun_Motion.csv')
+    OPEN(3,file = 'Earth_Motion.csv')
+    OPEN(4,file = 'Jupiter_Motion.csv')
+    OPEN(7,file = 'Mars_Motion.csv')
+    OPEN(8,file = 'Saturn_Motion.csv')
+    OPEN(9,file = 'Uranus_Motion.csv')
+    OPEN(10,file = 'Neptune_Motion.csv')
+END IF
 
-                !Find absolute distance, s,  squared between bodies i & j
-                s_sq(i,j) = ((r(1,j) - r(1,i))**2 + (r(2,j) - r(2,i))**2 + (r(3,j) - r(3,i))**2)
+!Simulation start
+DO
+    DO i = 1,n
+        DO j = 1,n
+        !skip loop if i & j same (no force exerted by body on self)
+        IF (i == j) CYCLE
+            dist(:, i, j) = r(:, j) - r(:, i)
+
+            !Find absolute distance squared between bodies i & j
+            s_sq(i,j) = ((r(1,j) - r(1,i))**2 + (r(2,j) - r(2,i))**2 + (r(3,j) - r(3,i))**2)
 
 
-                !Find acceleration on object i in each dimension
-                a_1(:,i) = a_1(:,i) + G * M(j) * (r(:,j) - r(:,i))*(s_sq(i,j)**-1.5)
+            !Find acceleration on object i in each dimension
+            a_1(:,i) = a_1(:,i) + G * M(j) * (r(:,j) - r(:,i))*(s_sq(i,j)**-1.5)
 
 
-            END DO
         END DO
-
-        !Find new velocities after time-step
-        v = v + 0.5*(a_0 + a_1)*dt
-        a_0 = a_1
-        a_1 = 0
-
-        !Find new position, r, after time-step
-        r = r + v*dt + 0.5*a_0*dt**2
-
-        !updated elapsed time
-        time = time + dt
-        IF (time > 31536000) EXIT
     END DO
+
+    !Find new velocities after time-step
+    v = v + 0.5*(a_0 + a_1)*dt
+    a_0 = a_1
+    a_1 = 0
+
+    !Find new position, r, after time-step
+    r = r + v*dt + 0.5*a_0*dt**2
+
+    s = sqrt(s_sq) !avoids having to sqrt for every body logged
+
+    !Write every 250th step to log files
+    IF ((stepno == 250) .and. (lg == 'y')) THEN
+        WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1),',', s(1,1)
+        WRITE(3,*) time, ',', dist(1,1,2), ',', dist(2,1,2), ',', dist(3,1,2),',', s(1,2)
+        WRITE(4,*) time, ',', dist(1,1,3), ',', dist(2,1,3), ',', dist(3,1,3),',', s(1,3)
+        WRITE(7,*) time, ',', dist(1,1,4), ',', dist(2,1,4), ',', dist(3,1,4),',', s(1,4)
+        WRITE(8,*) time, ',', dist(1,1,5), ',', dist(2,1,5), ',', dist(3,1,5),',', s(1,5)
+        WRITE(9,*) time, ',', dist(1,1,6), ',', dist(2,1,6), ',', dist(3,1,6),',', s(1,6)
+        WRITE(10,*) time, ',', dist(1,1,7), ',', dist(2,1,7), ',', dist(3,1,7),',', s(1,7)
+        stepno = 0
+    END IF
+
+    !update elapsed time
+    time = time + dt
+    stepno = stepno + 1
+    IF (time > 31536000) EXIT
+END DO
+
+
+IF (lg == 'y') THEN
+    CLOSE(2)
+    CLOSE(3)
+    CLOSE(4)
+    CLOSE(7)
+    CLOSE(8)
+    CLOSE(9)
+    CLOSE(10)
+END IF
+
 
 WRITE(6,*) ""
 WRITE(6,*) "Final Conditions"
