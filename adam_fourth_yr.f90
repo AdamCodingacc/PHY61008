@@ -12,7 +12,7 @@ PROGRAM solar_sim
 
 !Initialize variables
 G = 6.67e-11
-n = 6
+n = 7
 dt = 1000
 AU = 1.496e11
 M(1) = 1.99e30
@@ -152,9 +152,12 @@ WRITE(6,*) "Would you like to save this run? (y/n)"
 READ *, lg !Store user input to decide whether to log data
 WRITE(6,*) ""
 
-WRITE(6,*) ""
 WRITE(6,*) "How many years would you like to simulate for?"
 READ *, num_yr !Store user input to decide whether to log data
+WRITE(6,*) ""
+
+WRITE(6,*) "What would you like the time step to be?"
+READ *, dt !Store user input to decide whether to log data
 WRITE(6,*) ""
 
 !Open Log Files to write data to if requested
