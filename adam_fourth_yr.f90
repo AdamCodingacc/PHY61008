@@ -156,7 +156,7 @@ WRITE(6,*) "How many years would you like to simulate for?"
 READ *, num_yr !Store user input to decide whether to log data
 WRITE(6,*) ""
 
-WRITE(6,*) "What would you like the time step to be?"
+WRITE(6,*) "What would you like the time step to be? (s)"
 READ *, dt !Store user input to decide whether to log data
 WRITE(6,*) ""
 
