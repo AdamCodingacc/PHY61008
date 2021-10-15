@@ -168,11 +168,9 @@ END IF
 
 !Bootstrap
 DO k = 0,3
-    a(:,:,-3) = a(:,:,-2)
-    a(:,:,-2) = a(:,:,-1)
-    a(:,:,-1) = a(:,:,0)
-    a(:,:,0) = 0
-
+    DO z = -3,0
+        a(:,:,z) = a(:,:,z+1)
+    END DO
     s_sq = 0
     dist = 0
 
@@ -202,30 +200,6 @@ DO k = 0,3
     time = time + dt
 END DO
 
-WRITE(6,*) ""
-WRITE(6,*) "Bootstrap Conditions"
-WRITE(6,*) "Position Vectors xyz (AU)"
-WRITE(6,*) ""
-!Print final coordinates of all bodies
-DO i = 1,n
-    WRITE(6,*) (r(:,i)/AU)
-END DO
-
-WRITE(6,*) ""
-WRITE(6,*) "Velocity xyz (ms^-1)"
-WRITE(6,*) ""
-DO i = 1,n
-    WRITE(6,*) v(:,i)
-END DO
-
-WRITE(6,*) ""
-WRITE(6,*) "Acceleration xyz (ms^-2)"
-WRITE(6,*) ""
-DO i = 1,n
-    DO k = -3,0
-        WRITE(6,*) a(:,i,k)
-    END DO
-END DO
 
 dt = 1000
 DO
