@@ -13,7 +13,7 @@ PROGRAM solar_sim
 !Initialize variables
 G = 6.67e-11
 n = 7
-dt = 100
+dt = 1
 AU = 1.496e11
 M(1) = 1.99e30
 M(2) = 5.97e24
@@ -176,7 +176,7 @@ DO k = 0,3
     r(:,:,0) = r(:,:,0) + v(:,:,0)*dt + 0.5*a(:,:,0)*dt**2
 
     !Shift previous values down array
-    DO z = -3,0
+    DO z = -3,-1
         a(:,:,z) = a(:,:,z+1)
         v(:,:,z) = v(:,:,z+1)
     END DO
@@ -204,35 +204,9 @@ DO k = 0,3
     time = time + dt
 END DO
 
-WRITE(6,*) "Bootstrap Conditions"
-WRITE(6,*) "Position Vectors xyz (AU)"
-WRITE(6,*) ""
-!Print initial coordinates of all bodies
-DO i = 1,n
-    WRITE(6,*) (r(:,i,0)/AU)
-END DO
-
-WRITE(6,*) ""
-WRITE(6,*) "Velocity xyz (ms^-1)"
-WRITE(6,*) ""
-!Print initial coordinates of all bodies
-DO i = 1,n
-    DO k = -3,1
-        WRITE(6,*) v(:,i,k)
-    END DO
-END DO
-
-WRITE(6,*) ""
-WRITE(6,*) "Acceleration xyz (ms^-2)"
-WRITE(6,*) ""
-DO i = 1,n
-    DO k = -3,1
-        WRITE(6,*) a(:,i,k)
-    END DO
-END DO
 
 !Increase time-step for predictor
-!dt = 1000
+dt = 1000
 DO
     s_sq = 0
     dist = 0
