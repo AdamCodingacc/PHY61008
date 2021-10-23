@@ -4,7 +4,7 @@ PROGRAM solar_sim
     !Declare variables
     IMPLICIT NONE
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
-    DOUBLEPRECISION :: r(1:3, 1:7), M(1:7), v(1:3, 1:7),  a(1:3, 1:7, -3:1)
+    DOUBLEPRECISION :: r(1:3, 1:7), M(1:7), v(1:3, 1:7, -3:1),  a(1:3, 1:7, -3:1)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
     DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time
     INTEGER :: num_yr, n, i, j, k, z, b, stepno !Define indexing integers
@@ -32,6 +32,7 @@ absv_sq = 0
 E_0 = 0
 E_1 = 0
 a = 0
+v = 0
 COM = 0
 COV = 0
 
@@ -57,39 +58,39 @@ r(2,7) = 30.07 * AU * cos(1.)
 r(3,7) = 0
 
 !Initialize starting velocities
-v(:,1) = 0
-v(1,2) = 29780 * -1. * cos(1.)
-v(2,2) = 29780 * -1. * sin(1.)
-v(3,2) = 0
-v(1,3) = 13060 * -1. * cos(1.)
-v(2,3) = 13060 * -1. * sin(1.)
-v(3,3) = 0
-v(1,4) = 24070 * -1. * cos(1.)
-v(2,4) = 24070 * -1. * sin(1.)
-v(3,4) = 0
-v(1,5) = 9680 * -1. * cos(1.)
-v(2,5) = 9680 * -1. * sin(1.)
-v(3,5) = 0
-v(1,6) = 6800 * -1. * cos(1.)
-v(2,6) = 6800 * -1. * sin(1.)
-v(3,6) = 0
-v(1,7) = 5430 * -1. * cos(1.)
-v(2,7) = 5430 * -1. * sin(1.)
-v(3,7) = 0
+v(:,1,0) = 0
+v(1,2,0) = 29780 * -1. * cos(1.)
+v(2,2,0) = 29780 * -1. * sin(1.)
+v(3,2,0) = 0
+v(1,3,0) = 13060 * -1. * cos(1.)
+v(2,3,0) = 13060 * -1. * sin(1.)
+v(3,3,0) = 0
+v(1,4,0) = 24070 * -1. * cos(1.)
+v(2,4,0) = 24070 * -1. * sin(1.)
+v(3,4,0) = 0
+v(1,5,0) = 9680 * -1. * cos(1.)
+v(2,5,0) = 9680 * -1. * sin(1.)
+v(3,5,0) = 0
+v(1,6,0) = 6800 * -1. * cos(1.)
+v(2,6,0) = 6800 * -1. * sin(1.)
+v(3,6,0) = 0
+v(1,7,0) = 5430 * -1. * cos(1.)
+v(2,7,0) = 5430 * -1. * sin(1.)
+v(3,7,0) = 0
 
 DO i = 1, n-1
     COM(:) = COM(:) + r(:,i)*M(i)
-    COV(:) = COV(:) + v(:,i)*M(i)
+    COV(:) = COV(:) + v(:,i,0)*M(i)
     Mtot = Mtot + M(i)
 END DO
 
 !Correct for COM and COV
 DO i = 1,n
     r(:,i) = r(:,i) - COM/Mtot
-    v(:,i) = v(:,i) - COV/Mtot
+    v(:,i,0) = v(:,i,0) - COV/Mtot
 
     DO k = 1,3
-        absv_sq(i) = absv_sq(i) + v(k,i)**2
+        absv_sq(i) = absv_sq(i) + v(k,i,0)**2
     END DO
 END DO
 
@@ -131,7 +132,7 @@ WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 !Print initial coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) v(:,i)
+    WRITE(6,*) v(:,i,-3)
 END DO
 
 WRITE(6,*) ""
@@ -168,13 +169,18 @@ END IF
 
 !Bootstrap
 DO k = 0,3
+
+    !Find new position, r, after time-step
+    !Comes at the start of the array to get the new position before other variables updated
+    r = r + v(:,:,-1)*dt + 0.5*a(:,:,-1)*dt**2
+
+    !Shift previous values down array
     DO z = -3,0
         a(:,:,z) = a(:,:,z+1)
+        v(:,:,z) = v(:,:,z+1)
     END DO
     s_sq = 0
     dist = 0
-
-
 
     DO i = 1,n
         DO j = 1,n
@@ -191,16 +197,37 @@ DO k = 0,3
 
         END DO
     END DO
-    !Find new position, r, after time-step
-    r = r + v*dt + 0.5*a(:,:,-1)*dt**2
 
     !Find new velocities after time-step
-    v = v + 0.5*(a(:,:,-1) + a(:,:,0))*dt
+    v(:,:,0) = v(:,:,0) + 0.5*(a(:,:,-1) + a(:,:,0))*dt
 
     time = time + dt
 END DO
 
+WRITE(6,*) "Bootstrap Conditions"
+WRITE(6,*) "Position Vectors xyz (AU)"
+WRITE(6,*) ""
+!Print initial coordinates of all bodies
+DO i = 1,n
+    WRITE(6,*) (r(:,i)/AU)
+END DO
 
+WRITE(6,*) ""
+WRITE(6,*) "Velocity xyz (ms^-1)"
+WRITE(6,*) ""
+!Print initial coordinates of all bodies
+DO i = 1,n
+    WRITE(6,*) v(:,i,0)
+END DO
+
+WRITE(6,*) ""
+WRITE(6,*) "Acceleration xyz (ms^-2)"
+WRITE(6,*) ""
+DO i = 1,n
+    WRITE(6,*) a(:,i,0)
+END DO
+
+!Increase time-step for predictor
 dt = 1000
 DO
     DO i = 1,n
@@ -215,10 +242,10 @@ DO
 
 
     !Find new velocities after time-step
-    v = v + 0.5*(a(:,:,0) + a(:,:,1))*dt
+    v(:,:,0) = v(:,:,0) + 0.5*(a(:,:,0) + a(:,:,1))*dt
 
     !Find new position, r, after time-step
-    r = r + v*dt + 0.5*a(:,:,1)*dt**2
+    r = r + v(:,:,0)*dt + 0.5*a(:,:,1)*dt**2
 
     a(:,:,-3) = a(:,:,-2)
     a(:,:,-2) = a(:,:,-1)
@@ -286,7 +313,7 @@ DO i = 1,n
 
         !Sum kinetic energy in each dimension (k)
         DO k = 1,3
-            absv_sq(i) = absv_sq(i) + v(k,i)**2
+            absv_sq(i) = absv_sq(i) + v(k,i,0)**2
         END DO
 END DO
 
