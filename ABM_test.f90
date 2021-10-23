@@ -33,6 +33,7 @@ E_0 = 0
 E_1 = 0
 a = 0
 v = 0
+r = 0
 COM = 0
 COV = 0
 
@@ -107,7 +108,7 @@ DO i = 1,n
 
 
                 !Need + so each object does not overwrite previous
-                a(:,i,-3) = a(:,i,-3) + (G * M(j) * (r(:,j) - r(:,i)) * (s_sq(i,j)**-1.5))
+                a(:,i,0) = a(:,i,0) + (G * M(j) * (r(:,j) - r(:,i)) * (s_sq(i,j)**-1.5))
 
             END DO
         END DO
@@ -132,14 +133,14 @@ WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 !Print initial coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) v(:,i,-3)
+    WRITE(6,*) v(:,i,0)
 END DO
 
 WRITE(6,*) ""
 WRITE(6,*) "Acceleration xyz (ms^-2)"
 WRITE(6,*) ""
 DO i = 1,n
-    WRITE(6,*) a(:,i,-3)
+    WRITE(6,*) a(:,i,0)
 END DO
 
 WRITE(6,*) ""
@@ -180,7 +181,6 @@ DO k = 0,3
         v(:,:,z) = v(:,:,z+1)
     END DO
     s_sq = 0
-    dist = 0
 
     DO i = 1,n
         DO j = 1,n
@@ -230,27 +230,34 @@ END DO
 !Increase time-step for predictor
 dt = 1000
 DO
+    !Predict position using ABM predictor
+    r = r + (dt/24)*(-9*v(:,:,-3) + 37*v(:,:,-2) - 59*v(:,:,-1) + 55*v(:,:,0))
+    !Shift previous values down array
+    DO z = -3,0
+        a(:,:,z) = a(:,:,z+1)
+        v(:,:,z) = v(:,:,z+1)
+    END DO
+    s_sq = 0
+    dist = 0
+
+
     DO i = 1,n
         DO j = 1,n
         !skip loop if i & j same (no force exerted by body on self)
         IF (i == j) CYCLE
-            dist(:, i, j) = r(:, j) - r(:, i)
+
+            !Find absolute distance squared between bodies i & j
+            s_sq(i,j) = ((r(1,j) - r(1,i))**2 + (r(2,j) - r(2,i))**2 + (r(3,j) - r(3,i))**2)
+
+            !Find acceleration on object i in each dimension
+            a(:,i,0) = a(:,i,0) + G * M(j) * (r(:,j) - r(:,i))*(s_sq(i,j)**-1.5)
+
+
         END DO
     END DO
 
-    a(:,:,1) = a(:,:,0) + (dt/24)*(-9*a(:,:,-3) + 37*a(:,:,-2) - 59*a(:,:,-1) + 55*a(:,:,0))
-
-
-    !Find new velocities after time-step
-    v(:,:,0) = v(:,:,0) + 0.5*(a(:,:,0) + a(:,:,1))*dt
-
-    !Find new position, r, after time-step
-    r = r + v(:,:,0)*dt + 0.5*a(:,:,1)*dt**2
-
-    a(:,:,-3) = a(:,:,-2)
-    a(:,:,-2) = a(:,:,-1)
-    a(:,:,-1) = a(:,:,0)
-    a(:,:,0) = a(:,:,1)
+    !Predict velocity using ABM predictor
+    v(:,:,1) = v(:,:,0) + (dt/24)*(-9*a(:,:,-3) + 37*a(:,:,-2) - 59*a(:,:,-1) + 55*a(:,:,0))
 
     !Write every 250th step to log files
     IF ((MOD(stepno, 500) == 0) .and. (lg == 'y')) THEN
@@ -294,7 +301,7 @@ WRITE(6,*) ""
 WRITE(6,*) "Acceleration xyz (ms^-2)"
 WRITE(6,*) ""
 DO i = 1,n
-    WRITE(6,*) a(:,i,1)
+    WRITE(6,*) a(:,i,0)
 END DO
 
 
