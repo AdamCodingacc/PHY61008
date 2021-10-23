@@ -13,7 +13,7 @@ PROGRAM solar_sim
 !Initialize variables
 G = 6.67e-11
 n = 7
-dt = 1000
+dt = 1000.
 AU = 1.496e11
 M(1) = 1.99e30
 M(2) = 5.97e24
@@ -175,12 +175,11 @@ DO k = 0,3
     !Comes at the start of the array to get the new position before other variables updated
     r(:,:,0) = r(:,:,0) + v(:,:,0)*dt + 0.5*a(:,:,0)*dt**2
 
-    !Shift previous values down array
+    !Shift previous values down arrays
     DO z = -3,-1
         a(:,:,z) = a(:,:,z+1)
         v(:,:,z) = v(:,:,z+1)
     END DO
-    s_sq = 0
 
     DO i = 1,n
         DO j = 1,n
@@ -205,10 +204,8 @@ DO k = 0,3
 END DO
 
 
-!Increase time-step for predictor
 DO
-    s_sq = 0
-    dist = 0
+    !Clear new acceleration to not factor it into the calculation
     a(:,:,1) = 0
 
     !Predict position using ABM predictor
@@ -233,7 +230,7 @@ DO
     !Predict velocity using ABM predictor
     v(:,:,1) = v(:,:,0) + ((dt/24.)*(-9.*a(:,:,-3) + 37.*a(:,:,-2) - 59.*a(:,:,-1) + 55.*a(:,:,0)))
 
-    !Shift previous values down array
+    !Shift previous values down arrays
     DO z = -3,0
         a(:,:,z) = a(:,:,z+1)
         v(:,:,z) = v(:,:,z+1)
