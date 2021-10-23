@@ -6,14 +6,14 @@ PROGRAM solar_sim
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
     DOUBLEPRECISION :: r(1:3, 1:7, 0:1), M(1:7), v(1:3, 1:7, -3:1),  a(1:3, 1:7, -3:1)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
-    DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time
-    INTEGER :: num_yr, n, i, j, k, z, b, stepno !Define indexing integers
+    DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time, num_yr
+    INTEGER :: n, i, j, k, z, stepno !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
 !Initialize variables
 G = 6.67e-11
 n = 7
-dt = 1
+dt = 1000
 AU = 1.496e11
 M(1) = 1.99e30
 M(2) = 5.97e24
@@ -206,7 +206,6 @@ END DO
 
 
 !Increase time-step for predictor
-dt = 1000
 DO
     s_sq = 0
     dist = 0
@@ -242,7 +241,6 @@ DO
     r(:,:,0) = r(:,:,1)
 
 
-
     !Write every 250th step to log files
     IF ((MOD(stepno, 500) == 0) .and. (lg == 'y')) THEN
         WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1)
@@ -257,9 +255,8 @@ DO
     !update elapsed time
     time = time + dt
     stepno = stepno + 1
-    IF (time > (num_yr * 31536000)) EXIT
+    IF (time > (num_yr * 31536000.)) EXIT
 END DO
-
 
 IF (lg == 'y') THEN
     CLOSE(2)
