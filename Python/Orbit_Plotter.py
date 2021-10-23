@@ -6,23 +6,21 @@ import csv
 AU = 1.5e11
 
 t = np.array([]) #Create empty array for time
-xsun = ysun = zsun = ssun = np.array([]) #Create arrays for Sun position in each dimension
-xear = year = zear = sear = np.array([]) #Arrays for Earth
-xjup = yjup = zjup = sjup = np.array([]) #Arrays for Jupiter
-xmars = ymars = zmars = smars = np.array([]) #Arrays for Mars
-xsat = ysat = zsat = ssat = np.array([]) #Arrays for Saturn
-xura = yura = zura = sura = np.array([]) #Arrays for Uranus
-xnep = ynep = znep = snep = np.array([]) #Arrays for Neptune
+xsun = ysun = zsun = np.array([]) #Create arrays for Sun position in each dimension
+xear = year = zear = np.array([]) #Arrays for Earth
+xjup = yjup = zjup = np.array([]) #Arrays for Jupiter
+xmars = ymars = zmars = np.array([]) #Arrays for Mars
+xsat = ysat = zsat = np.array([]) #Arrays for Saturn
+xura = yura = zura = np.array([]) #Arrays for Uranus
+xnep = ynep = znep = np.array([]) #Arrays for Neptune
 
-#sstar = t
-#y = x**2
+
 file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Sun_Motion.csv')
 look = csv.reader(file,delimiter = ',')
 for row in look:
     xsun = np.append(xsun,float(row[1]))
     ysun = np.append(ysun,float(row[2]))
     zsun = np.append(zsun,float(row[3]))
-    ssun = np.append(ssun,float(row[4]))
 file.close()
 
 file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Earth_Motion.csv')
@@ -32,7 +30,6 @@ for row in look:
     xear = np.append(xear,float(row[1]))
     year = np.append(year,float(row[2]))
     zear = np.append(zear,float(row[3]))
-    sear = np.append(sear,float(row[4]))
 file.close()
 
 
@@ -43,7 +40,6 @@ for row in look:
     xjup = np.append(xjup,float(row[1]))
     yjup = np.append(yjup,float(row[2]))
     zjup = np.append(zjup,float(row[3]))
-    sjup = np.append(sjup,float(row[4]))
 file.close()
 
 file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Mars_Motion.csv')
@@ -52,7 +48,6 @@ for row in look:
     xmars = np.append(xmars,float(row[1]))
     ymars = np.append(ymars,float(row[2]))
     zmars = np.append(zmars,float(row[3]))
-    smars = np.append(smars,float(row[4]))
 file.close()
 
 file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Saturn_Motion.csv')
@@ -61,7 +56,6 @@ for row in look:
     xsat = np.append(xsat,float(row[1]))
     ysat = np.append(ysat,float(row[2]))
     zsat = np.append(zsat,float(row[3]))
-    ssat = np.append(ssat,float(row[4]))
 file.close()
 
 file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Uranus_Motion.csv')
@@ -70,7 +64,6 @@ for row in look:
     xura = np.append(xura,float(row[1]))
     yura = np.append(yura,float(row[2]))
     zura = np.append(zura,float(row[3]))
-    sura = np.append(sura,float(row[4]))
 file.close()
 
 file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Neptune_Motion.csv')
@@ -79,7 +72,6 @@ for row in look:
     xnep = np.append(xnep,float(row[1]))
     ynep = np.append(ynep,float(row[2]))
     znep = np.append(znep,float(row[3]))
-    snep = np.append(snep,float(row[4]))
 file.close()
 
 

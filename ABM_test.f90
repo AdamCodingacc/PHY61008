@@ -245,6 +245,7 @@ DO
         DO j = 1,n
         !skip loop if i & j same (no force exerted by body on self)
         IF (i == j) CYCLE
+            dist(:, i, j) = r(:, j) - r(:, i)
 
             !Find absolute distance squared between bodies i & j
             s_sq(i,j) = ((r(1,j) - r(1,i))**2 + (r(2,j) - r(2,i))**2 + (r(3,j) - r(3,i))**2)
