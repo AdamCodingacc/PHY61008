@@ -4,7 +4,7 @@ PROGRAM solar_sim
     !Declare variables
     IMPLICIT NONE
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
-    DOUBLEPRECISION :: r(1:3, 1:7, 0:1), M(1:7), v(1:3, 1:7, -3:1),  a(1:3, 1:7, -3:1)
+    DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -3:2),  a(1:3, 1:7, -3:1)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
     DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time, num_yr
     INTEGER :: n, i, j, k, z, stepno !Define indexing integers
@@ -203,13 +203,13 @@ DO k = 0,3
     time = time + dt
 END DO
 
-
+!ABM Method
 DO
     !Clear new acceleration to not factor it into the calculation
     a(:,:,1) = 0
 
     !Predict position using ABM predictor
-    r(:,:,1) = r(:,:,0) + ((dt/24.)*(-9.*v(:,:,-3) + 37.*v(:,:,-2) - 59.*v(:,:,-1) + 55.*v(:,:,0)))
+    r(:,:,1) = r(:,:,0) + (dt/24.) * (-9.*v(:,:,-3) + 37.*v(:,:,-2) - 59.*v(:,:,-1) + 55.*v(:,:,0))
 
     DO i = 1,n
         DO j = 1,n
@@ -228,14 +228,20 @@ DO
     END DO
 
     !Predict velocity using ABM predictor
-    v(:,:,1) = v(:,:,0) + ((dt/24.)*(-9.*a(:,:,-3) + 37.*a(:,:,-2) - 59.*a(:,:,-1) + 55.*a(:,:,0)))
+    v(:,:,1) = v(:,:,0) + (dt/24.) * (-9.*a(:,:,-3) + 37.*a(:,:,-2) - 59.*a(:,:,-1) + 55.*a(:,:,0))
+
+    !ABM corrector
+    r(:,:,2) = r(:,:,0) + (dt/24) * (v(:,:,-2) - 5.*v(:,:,-1) + 19.*v(:,:,0) + 9.*v(:,:,1) )
+    v(:,:,2) = v(:,:,0) + (dt/24) * (a(:,:,-2) - 5.*a(:,:,-1) + 19.*a(:,:,0) + 9.*a(:,:,1) )
 
     !Shift previous values down arrays
     DO z = -3,0
         a(:,:,z) = a(:,:,z+1)
         v(:,:,z) = v(:,:,z+1)
     END DO
-    r(:,:,0) = r(:,:,1)
+    !Set corrected values as current position and velocity
+    r(:,:,0) = r(:,:,2)
+    v(:,:,0) = v(:,:,2)
 
 
     !Write every 250th step to log files
