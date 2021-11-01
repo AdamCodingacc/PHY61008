@@ -15,7 +15,7 @@ G = 6.67e-11
 n = 7
 dt = 1.
 AU = 1.496e11
-RelErr = 5.e-6
+RelErr = 5.e-12
 Small = 1.e-5
 errcoeff = 19./270. !Saves doing the calculation every loop
 M(1) = 1.99e30
@@ -329,6 +329,7 @@ DO i = 1,n
     END DO
 END DO
 
+WRITE(6,*) dt
 
 !Loop through each body to find GPE of each
 GPE = 0
