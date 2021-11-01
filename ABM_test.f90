@@ -257,15 +257,11 @@ DO
             dt = dt * 2
 
             !Omit alternate points to adjust timestep
-            a(:,:,-1) = a(:,:,-2)
-            a(:,:,-2) = a(:,:,-4)
-            a(:,:,-3) = a(:,:,-6)
-
-            v(:,:,-1) = v(:,:,-2)
-            v(:,:,-2) = v(:,:,-4)
-            v(:,:,-3) = v(:,:,-6)
+            DO k = 1,3
+                a(:,:,-k) = a(:,:,-2*k)
+                v(:,:,-k) = v(:,:,-2*k)
+            END DO
         END IF
-        !WRITE(6,*) dt
 
         !Reset counter to let old data fill up
         counter = 0
