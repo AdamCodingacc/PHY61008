@@ -4,7 +4,7 @@ PROGRAM solar_sim
     !Declare variables
     IMPLICIT NONE
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
-    DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -3:2),  a(1:3, 1:7, -3:1)
+    DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:1)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
     DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time, num_yr, RelErr, Small, errcoeff
     INTEGER :: n, i, j, k, z, stepno, counter !Define indexing integers
@@ -240,7 +240,7 @@ DO
     v(:,:,2) = v(:,:,0) + (dt/24) * (a(:,:,-2) - 5.*a(:,:,-1) + 19.*a(:,:,0) + 9.*a(:,:,1) )
 
     !Shift previous values down arrays
-    DO z = -3,0
+    DO z = -6,0
         a(:,:,z) = a(:,:,z+1)
         v(:,:,z) = v(:,:,z+1)
     END DO
@@ -248,10 +248,15 @@ DO
     r(:,:,0) = r(:,:,2)
     v(:,:,0) = v(:,:,2)
 
+    !Ensure enough data points are stored
     IF (counter > 6) THEN
-        counter = 0
+        !Check if error from predictor-corrector is small enough
         IF (errcoeff * MAXVAL(ABS(r(:,:,2) - r(:,:,1)) / (ABS(r(:,:,2)) + Small)) < (RelErr * 0.01)) THEN
+
+            !double timestep
             dt = dt * 2
+
+            !Omit alternate points to adjust timestep
             a(:,:,-1) = a(:,:,-2)
             a(:,:,-2) = a(:,:,-4)
             a(:,:,-3) = a(:,:,-6)
@@ -260,7 +265,10 @@ DO
             v(:,:,-2) = v(:,:,-4)
             v(:,:,-3) = v(:,:,-6)
         END IF
-        WRITE(6,*) dt
+        !WRITE(6,*) dt
+
+        !Reset counter to let old data fill up
+        counter = 0
     END IF
 
 
