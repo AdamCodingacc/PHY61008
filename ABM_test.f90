@@ -4,7 +4,7 @@ PROGRAM solar_sim
     !Declare variables
     IMPLICIT NONE
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
-    DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:1)
+    DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:1), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
     DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time, num_yr, RelErr, Small, errcoeff
     INTEGER :: n, i, j, k, z, stepno, counter !Define indexing integers
@@ -65,23 +65,23 @@ r(3,7,0) = 0
 
 !Initialize starting velocities
 v(:,1,0) = 0
-v(1,2,0) = 29780 * -1. * cos(1.)
-v(2,2,0) = 29780 * -1. * sin(1.)
+v(1,2,0) = 29780. * -1. * cos(1.)
+v(2,2,0) = 29780. * -1. * sin(1.)
 v(3,2,0) = 0
-v(1,3,0) = 13060 * -1. * cos(1.)
-v(2,3,0) = 13060 * -1. * sin(1.)
+v(1,3,0) = 13060. * -1. * cos(1.)
+v(2,3,0) = 13060. * -1. * sin(1.)
 v(3,3,0) = 0
-v(1,4,0) = 24070 * -1. * cos(1.)
-v(2,4,0) = 24070 * -1. * sin(1.)
+v(1,4,0) = 24070. * -1. * cos(1.)
+v(2,4,0) = 24070. * -1. * sin(1.)
 v(3,4,0) = 0
-v(1,5,0) = 9680 * -1. * cos(1.)
-v(2,5,0) = 9680 * -1. * sin(1.)
+v(1,5,0) = 9680. * -1. * cos(1.)
+v(2,5,0) = 9680. * -1. * sin(1.)
 v(3,5,0) = 0
-v(1,6,0) = 6800 * -1. * cos(1.)
-v(2,6,0) = 6800 * -1. * sin(1.)
+v(1,6,0) = 6800. * -1. * cos(1.)
+v(2,6,0) = 6800. * -1. * sin(1.)
 v(3,6,0) = 0
-v(1,7,0) = 5430 * -1. * cos(1.)
-v(2,7,0) = 5430 * -1. * sin(1.)
+v(1,7,0) = 5430. * -1. * cos(1.)
+v(2,7,0) = 5430. * -1. * sin(1.)
 v(3,7,0) = 0
 
 DO i = 1, n-1
@@ -253,14 +253,41 @@ DO
         !Check if error from predictor-corrector is small enough
         IF (errcoeff * MAXVAL(ABS(r(:,:,2) - r(:,:,1)) / (ABS(r(:,:,2)) + Small)) < (RelErr * 0.01)) THEN
 
-            !double timestep
-            dt = dt * 2
+            !Double timestep
+            dt = dt * 2.
 
             !Omit alternate points to adjust timestep
             DO k = 1,3
                 a(:,:,-k) = a(:,:,-2*k)
                 v(:,:,-k) = v(:,:,-2*k)
             END DO
+        END IF
+
+        IF (errcoeff * MAXVAL(ABS(r(:,:,2) - r(:,:,1)) / (ABS(r(:,:,2)) + Small)) > RelErr) THEN
+
+            !halve timestep
+            dt = dt * 0.5
+
+            !Interpolate previous data points
+            a_int(:,:,1) = (-5. * a(:,:,-4) + 28. * a(:,:,-3) - 70. * a(:,:,-2) + 140. * a(:,:,-1) + 35. * a(:,:,0)) / 128.
+            a_int(:,:,2) = (3. * a(:,:,-4) - 20. * a(:,:,-3) + 90. * a(:,:,-2) + 60. * a(:,:,-1) -5. * a(:,:,0)) / 128.
+
+            v_int(:,:,1) = (-5. * v(:,:,-4) + 28. * v(:,:,-3) - 70. * v(:,:,-2) + 140. * v(:,:,-1) + 35. * v(:,:,0)) / 128.
+            v_int(:,:,2) = (3. * v(:,:,-4) - 20. * v(:,:,-3) + 90. * v(:,:,-2) + 60. * v(:,:,-1) -5. * v(:,:,0)) / 128.
+
+            !Create new mesh
+            !-5 and -6 unimportant, not used in calculation & overwritten before next time-step change
+            a(:,:,-4) = a(:,:,-2)
+            a(:,:,-3) = a_int(:,:,2)
+            a(:,:,-2) = a(:,:,-1)
+            a(:,:,-1) = a_int(:,:,1)
+
+            v(:,:,-4) = v(:,:,-2)
+            v(:,:,-3) = v_int(:,:,2)
+            v(:,:,-2) = v(:,:,-1)
+            v(:,:,-1) = v_int(:,:,1)
+
+
         END IF
 
         !Reset counter to let old data fill up
