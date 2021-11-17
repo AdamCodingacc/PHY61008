@@ -4,7 +4,7 @@ PROGRAM solar_sim
     !Declare variables
     IMPLICIT NONE
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
-    DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:1), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
+    DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:2), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
     DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time, num_yr, RelErr, Small, errcoeff
     INTEGER :: n, i, j, k, z, stepno, counter !Define indexing integers
@@ -210,29 +210,22 @@ END DO
 
 !ABM Method
 DO
-    !Clear new acceleration to not factor it into the calculation
+    !Clear new acceleration to not factor into calculation
     a(:,:,1) = 0
 
-    !Predict position using ABM predictor
+    !Predict position and velocity using ABM predictor
     r(:,:,1) = r(:,:,0) + ((dt/24.) * (-9.*v(:,:,-3) + 37.*v(:,:,-2) - 59.*v(:,:,-1) + 55.*v(:,:,0)))
-
-    !Predict velocity using ABM predictor
     v(:,:,1) = v(:,:,0) + ((dt/24.) * (-9.*a(:,:,-3) + 37.*a(:,:,-2) - 59.*a(:,:,-1) + 55.*a(:,:,0)))
 
     !Calculate acceleration for predicted position
     DO i = 1,n
         DO j = 1,n
-        !skip loop if i & j same (no force exerted by body on self)
         IF (i == j) CYCLE
             dist(:, i, j) = r(:,j,1) - r(:,i,1)
 
-            !Find absolute distance squared between bodies i & j
             s_sq(i,j) = ((r(1,j,1) - r(1,i,1))**2 + (r(2,j,1) - r(2,i,1))**2 + (r(3,j,1) - r(3,i,1))**2)
 
-            !Find acceleration on object i in each dimension
             a(:,i,1) = a(:,i,1) + G * M(j) * (r(:,j,1) - r(:,i,1))*(s_sq(i,j)**-1.5)
-
-
         END DO
     END DO
 
@@ -242,20 +235,17 @@ DO
     r(:,:,2) = r(:,:,0) + ((dt/24) * (v(:,:,-2) - 5.*v(:,:,-1) + 19.*v(:,:,0) + 9.*v(:,:,1)))
     v(:,:,2) = v(:,:,0) + ((dt/24) * (a(:,:,-2) - 5.*a(:,:,-1) + 19.*a(:,:,0) + 9.*a(:,:,1)))
 
+
     !Recalculate acceleration for corrected position
+    a(:,:,2) = 0
     DO i = 1,n
         DO j = 1,n
-        !skip loop if i & j same (no force exerted by body on self)
         IF (i == j) CYCLE
             dist(:, i, j) = r(:,j,2) - r(:,i,2)
 
-            !Find absolute distance squared between bodies i & j
             s_sq(i,j) = ((r(1,j,2) - r(1,i,2))**2 + (r(2,j,2) - r(2,i,2))**2 + (r(3,j,2) - r(3,i,2))**2)
 
-            !Find acceleration on object i in each dimension
-            a(:,i,1) = a(:,i,1) + G * M(j) * (r(:,j,1) - r(:,i,1))*(s_sq(i,j)**-1.5)
-
-
+            a(:,i,2) = a(:,i,2) + G * M(j) * (r(:,j,2) - r(:,i,2))*(s_sq(i,j)**-1.5)
         END DO
     END DO
 
@@ -264,9 +254,10 @@ DO
         a(:,:,z) = a(:,:,z+1)
         v(:,:,z) = v(:,:,z+1)
     END DO
-    !Set corrected values as current position and velocity
+    !Set corrected values as current position, velocity and acceleration
     r(:,:,0) = r(:,:,2)
     v(:,:,0) = v(:,:,2)
+    a(:,:,0) = a(:,:,2)
 
     !Ensure enough data points are stored
     IF (counter > 6) THEN
