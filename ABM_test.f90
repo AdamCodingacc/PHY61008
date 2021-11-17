@@ -6,7 +6,7 @@ PROGRAM solar_sim
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
     DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:2), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
-    DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dt, G, time, num_yr, RelErr, Small, errcoeff
+    DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dt, G, time, num_yr, RelErr, Small, errcoeff
     INTEGER :: n, i, j, k, z, stepno, counter !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
@@ -173,6 +173,8 @@ IF (lg == 'y') THEN
     OPEN(10,file = 'Neptune_Motion.csv')
 END IF
 
+OPEN(11, file = 'Energy_err.csv')
+
 !Bootstrap
 DO k = 0,5
 
@@ -258,6 +260,34 @@ DO
     r(:,:,0) = r(:,:,2)
     v(:,:,0) = v(:,:,2)
     a(:,:,0) = a(:,:,2)
+
+
+
+GPE = 0
+absv_sq = 0
+DO i = 1,n
+            DO j = 1,n
+            !skip loop if i & j same (no force exerted by body on self)
+            IF (i == j) CYCLE
+                GPE(i) = GPE(i) - G*M(i)*M(j)/sqrt(s_sq(i,j))
+            END DO
+        END DO
+GPE = GPE*0.5
+
+DO i = 1,n
+    E_check = E_check + 0.5*M(i)*absv_sq(i) + GPE(i)
+END DO
+!WRITE(6,*) "Current Energy error"
+!WRITE(6,*) E_0 - E_check
+
+!Write every 100th step energy error to a log file
+IF ((MOD(stepno, 250) == 0)) THEN
+    WRITE(11,*) time, ',', E_0 - E_check, ',', E_check / E_0
+END IF
+
+
+
+
 
     !Ensure enough data points are stored
     IF (counter > 6) THEN
