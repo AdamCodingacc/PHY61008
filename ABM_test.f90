@@ -174,7 +174,7 @@ IF (lg == 'y') THEN
 END IF
 
 !Bootstrap
-DO k = 0,3
+DO k = 0,5
 
     !Find new position, r, after time-step
     !Comes at the start of the array to get the new position before other variables updated
@@ -214,8 +214,12 @@ DO
     a(:,:,1) = 0
 
     !Predict position using ABM predictor
-    r(:,:,1) = r(:,:,0) + (dt/24.) * (-9.*v(:,:,-3) + 37.*v(:,:,-2) - 59.*v(:,:,-1) + 55.*v(:,:,0))
+    r(:,:,1) = r(:,:,0) + ((dt/24.) * (-9.*v(:,:,-3) + 37.*v(:,:,-2) - 59.*v(:,:,-1) + 55.*v(:,:,0)))
 
+    !Predict velocity using ABM predictor
+    v(:,:,1) = v(:,:,0) + ((dt/24.) * (-9.*a(:,:,-3) + 37.*a(:,:,-2) - 59.*a(:,:,-1) + 55.*a(:,:,0)))
+
+    !Calculate acceleration for predicted position
     DO i = 1,n
         DO j = 1,n
         !skip loop if i & j same (no force exerted by body on self)
@@ -232,12 +236,28 @@ DO
         END DO
     END DO
 
-    !Predict velocity using ABM predictor
-    v(:,:,1) = v(:,:,0) + (dt/24.) * (-9.*a(:,:,-3) + 37.*a(:,:,-2) - 59.*a(:,:,-1) + 55.*a(:,:,0))
+
 
     !ABM corrector
-    r(:,:,2) = r(:,:,0) + (dt/24) * (v(:,:,-2) - 5.*v(:,:,-1) + 19.*v(:,:,0) + 9.*v(:,:,1) )
-    v(:,:,2) = v(:,:,0) + (dt/24) * (a(:,:,-2) - 5.*a(:,:,-1) + 19.*a(:,:,0) + 9.*a(:,:,1) )
+    r(:,:,2) = r(:,:,0) + ((dt/24) * (v(:,:,-2) - 5.*v(:,:,-1) + 19.*v(:,:,0) + 9.*v(:,:,1)))
+    v(:,:,2) = v(:,:,0) + ((dt/24) * (a(:,:,-2) - 5.*a(:,:,-1) + 19.*a(:,:,0) + 9.*a(:,:,1)))
+
+    !Recalculate acceleration for corrected position
+    DO i = 1,n
+        DO j = 1,n
+        !skip loop if i & j same (no force exerted by body on self)
+        IF (i == j) CYCLE
+            dist(:, i, j) = r(:,j,2) - r(:,i,2)
+
+            !Find absolute distance squared between bodies i & j
+            s_sq(i,j) = ((r(1,j,2) - r(1,i,2))**2 + (r(2,j,2) - r(2,i,2))**2 + (r(3,j,2) - r(3,i,2))**2)
+
+            !Find acceleration on object i in each dimension
+            a(:,i,1) = a(:,i,1) + G * M(j) * (r(:,j,1) - r(:,i,1))*(s_sq(i,j)**-1.5)
+
+
+        END DO
+    END DO
 
     !Shift previous values down arrays
     DO z = -6,0
@@ -263,6 +283,7 @@ DO
             END DO
         END IF
 
+        !Check if error from predictor-corrector is too large
         IF (errcoeff * MAXVAL(ABS(r(:,:,2) - r(:,:,1)) / (ABS(r(:,:,2)) + Small)) > RelErr) THEN
 
             !halve timestep
