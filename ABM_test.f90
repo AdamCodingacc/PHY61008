@@ -100,6 +100,7 @@ DO i = 1,n
     END DO
 END DO
 
+!====================================================================================================================
 !Calculate initial conditions and thus initial acceleration
 DO i = 1,n
             DO j = 1,n
@@ -175,6 +176,8 @@ END IF
 
 OPEN(11, file = 'Energy_err.csv')
 
+
+!============================================================================================================
 !Bootstrap
 DO k = 0,5
 
@@ -210,6 +213,7 @@ DO k = 0,5
     time = time + dt
 END DO
 
+!====================================================================================================================
 !ABM Method
 DO
     !Clear new acceleration to not factor into calculation
