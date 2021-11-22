@@ -17,11 +17,11 @@ dt = 1.
 AU = 1.496e11
 RelErr = 5.e-10
 Small = 1.e-7
-errcoeff = 19./270. !Saves doing the calculation every loop
+errcoeff = REAL(19./270.) !Saves doing the calculation every loop
 M(1) = 1.99e30
 M(2) = 5.97e24
-M(3) = 1.898e27
-M(4) = 6.4171e23
+M(3) = 6.4171e23
+M(4) = 1.898e27
 M(5) = 5.683e26
 M(6) = 8.681e25
 M(7) = 1.024e26
@@ -47,11 +47,11 @@ r(:,1,0) = 0 !System centred around Sun
 r(1,2,0) = AU * sin(1.) * -1.
 r(2,2,0) = AU * cos(1.)
 r(3,2,0) = 0
-r(1,3,0) = 5.2 * AU * sin(1.) * -1.
-r(2,3,0) = 5.2 * AU * cos(1.)
+r(1,3,0) = 1.52 * AU * sin(1.) * -1.
+r(2,3,0) = 1.52 * AU * cos(1.)
 r(3,3,0) = 0
-r(1,4,0) = 1.52 * AU * sin(1.) * -1.
-r(2,4,0) = 1.52 * AU * cos(1.)
+r(1,4,0) = 5.2 * AU * sin(1.) * -1.
+r(2,4,0) = 5.2 * AU * cos(1.)
 r(3,4,0) = 0
 r(1,5,0) = 9.583 * AU * sin(1.) * -1.
 r(2,5,0) = 9.583 * AU * cos(1.)
@@ -68,11 +68,11 @@ v(:,1,0) = 0
 v(1,2,0) = 29780. * -1. * cos(1.)
 v(2,2,0) = 29780. * -1. * sin(1.)
 v(3,2,0) = 0
-v(1,3,0) = 13060. * -1. * cos(1.)
-v(2,3,0) = 13060. * -1. * sin(1.)
+v(1,3,0) = 24070. * -1. * cos(1.)
+v(2,3,0) = 24070. * -1. * sin(1.)
 v(3,3,0) = 0
-v(1,4,0) = 24070. * -1. * cos(1.)
-v(2,4,0) = 24070. * -1. * sin(1.)
+v(1,4,0) = 13060. * -1. * cos(1.)
+v(2,4,0) = 13060. * -1. * sin(1.)
 v(3,4,0) = 0
 v(1,5,0) = 9680. * -1. * cos(1.)
 v(2,5,0) = 9680. * -1. * sin(1.)
@@ -139,20 +139,20 @@ WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 !Print initial coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) v(:,i,0)
+    WRITE(6,*) (v(:,i,0))
 END DO
 
 WRITE(6,*) ""
 WRITE(6,*) "Acceleration xyz (ms^-2)"
 WRITE(6,*) ""
 DO i = 1,n
-    WRITE(6,*) a(:,i,0)
+    WRITE(6,*) (a(:,i,0))
 END DO
 
 WRITE(6,*) ""
 WRITE(6,*) "Initial Energy of System (J)"
 WRITE(6,*) ""
-WRITE(6,*) E_0
+WRITE(6,*) (E_0)
 
 WRITE(6,*) ""
 WRITE(6,*) "Would you like to save this run? (y/n)"
@@ -286,7 +286,7 @@ END DO
 
 !Write every 100th step energy error to a log file
 IF ((MOD(stepno, 250) == 0)) THEN
-    WRITE(11,*) time, ',', E_0 - E_check, ',', E_check / E_0
+    WRITE(11,*) time, ',', (E_0 - E_check), ',', (E_check / E_0)
 END IF
 
 
@@ -385,7 +385,7 @@ WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 DO i = 1,n
     DO k = -3,1
-        WRITE(6,*) v(:,i,k)
+        WRITE(6,*) (v(:,i,k))
     END DO
 END DO
 
@@ -394,11 +394,11 @@ WRITE(6,*) "Acceleration xyz (ms^-2)"
 WRITE(6,*) ""
 DO i = 1,n
     DO k = -3,1
-        WRITE(6,*) a(:,i,k)
+        WRITE(6,*) (a(:,i,k))
     END DO
 END DO
 
-WRITE(6,*) dt
+WRITE(6,*) (dt)
 
 !Loop through each body to find GPE of each
 GPE = 0
@@ -429,8 +429,12 @@ END DO
 !Report final energy and accuracy test
 WRITE(6,*) ""
 WRITE(6,*) "Final Energy of System (J)"
-WRITE(6,*) E_1
+WRITE(6,*) (E_1)
 WRITE(6,*) "Percentage of Initial Energy Retained"
-WRITE(6,*) (E_1/E_0) * 100
+WRITE(6,*) ((E_1/E_0) * 100)
 
+WRITE(6,*) "Absolute distance from the Sun (AU)"
+DO k = 1,7
+    WRITE(6,*) s_sq(1,k)
+END DO
 END PROGRAM solar_sim
