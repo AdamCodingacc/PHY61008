@@ -13,5 +13,5 @@ for row in look:
     E_percent = np.append(E_percent,float(row[2]))
 file.close()
 
-plt.plot(t, np.log(E_diff))
+plt.plot(np.log(t), np.log(E_diff))
 #plt.plot(t, E_percent)

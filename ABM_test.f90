@@ -15,9 +15,9 @@ G = 6.67e-11
 n = 7
 dt = 1.
 AU = 1.496e11
-RelErr = 5.e-10
+RelErr = 5.e-13
 Small = 1.e-7
-errcoeff = REAL(19./270.) !Saves doing the calculation every loop
+errcoeff = 19./270. !Saves doing the calculation every loop
 M(1) = 1.99e30
 M(2) = 5.97e24
 M(3) = 6.4171e23
@@ -435,6 +435,6 @@ WRITE(6,*) ((E_1/E_0) * 100)
 
 WRITE(6,*) "Absolute distance from the Sun (AU)"
 DO k = 1,7
-    WRITE(6,*) s_sq(1,k)
+    WRITE(6,*) sqrt(s_sq(1,k))/AU
 END DO
 END PROGRAM solar_sim
