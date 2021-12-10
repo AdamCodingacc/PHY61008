@@ -15,7 +15,7 @@ G = 6.67e-11
 n = 7
 dt = 1.
 AU = 1.496e11
-RelErr = 5.e-13
+RelErr = 5.e-10
 Small = 1.e-7
 errcoeff = 19./270. !Saves doing the calculation every loop
 M(1) = 1.99e30
@@ -285,9 +285,9 @@ END DO
 !WRITE(6,*) E_0 - E_check
 
 !Write every 100th step energy error to a log file
-IF ((MOD(stepno, 250) == 0)) THEN
-    WRITE(11,*) time, ',', (E_0 - E_check), ',', (E_check / E_0)
-END IF
+!IF ((MOD(stepno, 250) == 0)) THEN
+!    WRITE(11,*) time, ',', (E_0 - E_check), ',', (E_check / E_0)
+!END IF
 
 
 
