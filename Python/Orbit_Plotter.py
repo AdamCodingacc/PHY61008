@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
-AU = 1.5e11
+AU = 1.496e13 #in cm
 
 t = np.array([]) #Create empty array for time
 xsun = ysun = zsun = np.array([]) #Create arrays for Sun position in each dimension
@@ -78,11 +78,13 @@ file.close()
 fig = plt.figure(figsize =(20,20))
 image = fig.add_subplot(111, projection = '3d')
 
+"""
 #Set axis limits where all bodies should be visible
 image.set_xlim(-40, 40)
 image.set_ylim(-40, 40)
 image.set_zlim(-40, 40)
-
+"""
+"""
 plt.plot(xsun/AU, ysun/AU, zsun/AU, '-', c='yellow')
 plt.plot(xear/AU, year/AU, zear/AU,'-', c='b')
 plt.plot(xjup/AU, yjup/AU, zjup/AU, '-', c='saddlebrown')
@@ -90,5 +92,7 @@ plt.plot(xmars/AU, ymars/AU, zmars/AU,'-', c='r')
 plt.plot(xsat/AU, ysat/AU, zsat/AU,'-', c='magenta')
 plt.plot(xura/AU, yura/AU, zura/AU,'-', c='cyan')
 plt.plot(xnep/AU, ynep/AU, znep/AU,'-', c='black')
+"""
+plt.plot(xjup, yjup, zjup, '-', c='red')
 
 plt.show()

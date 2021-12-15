@@ -7,24 +7,49 @@ PROGRAM solar_sim
     DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:2), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
     DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dt, G, time, num_yr, RelErr, Small, errcoeff
+    DOUBLEPRECISION :: msun, year, munit, runit, tunit, vunit, pc
     INTEGER :: n, i, j, k, z, stepno, counter !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
+! N body units
+   G=6.67e-8                 ! G in cgs
+   pc=3.086e18              ! pc in cm
+   msun=1.99e33              ! solar mass in g
+   year=60.*60.*24.*365.25     ! year in s
+   AU=1.496e13                ! au in cm
+!
+   munit=1.
+   runit=1.
+!
+! set units:
+!    masses in msun
+!    distances in pc
+! gives:
+!    vunit in km/s
+!    time in yrs
+!
+! time in yr
+   tunit=SQRT((runit*pc**3)/(G*munit*msun))/year
+! velocity in km/s
+   vunit=runit*pc/(tunit*year*1.e5)
+   write(6,*) 'tunit/yrs', tunit
+   write(6,*) 'vunit/km/s', vunit
+! ====================================
+
 !Initialize variables
-G = 6.67e-11
 n = 7
-dt = 1.
-AU = 1.496e11
-RelErr = 5.e-10
+dt = 1.e-10
+RelErr = 5.e-5
 Small = 1.e-7
 errcoeff = 19./270. !Saves doing the calculation every loop
-M(1) = 1.99e30
-M(2) = 5.97e24
-M(3) = 6.4171e23
-M(4) = 1.898e27
-M(5) = 5.683e26
-M(6) = 8.681e25
-M(7) = 1.024e26
+!Divide by msun for N body units
+M(1) = 1.99e30 / msun
+M(2) = 5.97e24 / msun
+M(3) = 6.4171e23 / msun
+M(4) = 1.898e27 / msun
+M(5) = 5.683e26 / msun
+M(6) = 8.681e25 / msun
+M(7) = 1.024e26 / msun
 
 !Empty array variables
 num_yr = 0
@@ -43,45 +68,46 @@ stepno = 0
 counter = 0
 
 !Initialize starting positions
+!Multiply by AU/pc for N body units
 r(:,1,0) = 0 !System centred around Sun
-r(1,2,0) = AU * sin(1.) * -1.
-r(2,2,0) = AU * cos(1.)
+r(1,2,0) = sin(1.) * -1. * AU/pc
+r(2,2,0) = cos(1.) * AU/pc
 r(3,2,0) = 0
-r(1,3,0) = 1.52 * AU * sin(1.) * -1.
-r(2,3,0) = 1.52 * AU * cos(1.)
+r(1,3,0) = 1.52 * sin(1.) * -1. * AU/pc
+r(2,3,0) = 1.52 * cos(1.) * AU/pc
 r(3,3,0) = 0
-r(1,4,0) = 5.2 * AU * sin(1.) * -1.
-r(2,4,0) = 5.2 * AU * cos(1.)
+r(1,4,0) = 5.2 * sin(1.) * -1. * AU/pc
+r(2,4,0) = 5.2 * cos(1.) * AU/pc
 r(3,4,0) = 0
-r(1,5,0) = 9.583 * AU * sin(1.) * -1.
-r(2,5,0) = 9.583 * AU * cos(1.)
+r(1,5,0) = 9.583 * sin(1.) * -1. * AU/pc
+r(2,5,0) = 9.583 * cos(1.) * AU/pc
 r(3,5,0) = 0
-r(1,6,0) = 19.201 * AU * sin(1.) * -1.
-r(2,6,0) = 19.201 * AU * cos(1.)
+r(1,6,0) = 19.201 * sin(1.) * -1. * AU/pc
+r(2,6,0) = 19.201 * cos(1.) * AU/pc
 r(3,6,0) = 0
-r(1,7,0) = 30.07 * AU * sin(1.) * -1.
-r(2,7,0) = 30.07 * AU * cos(1.)
+r(1,7,0) = 30.07 * sin(1.) * -1. * AU/pc
+r(2,7,0) = 30.07 * cos(1.) * AU/pc
 r(3,7,0) = 0
 
 !Initialize starting velocities
 v(:,1,0) = 0
-v(1,2,0) = 29780. * -1. * cos(1.)
-v(2,2,0) = 29780. * -1. * sin(1.)
+v(1,2,0) = 29.780 * -1. * cos(1.) /vunit
+v(2,2,0) = 29.780 * -1. * sin(1.) /vunit
 v(3,2,0) = 0
-v(1,3,0) = 24070. * -1. * cos(1.)
-v(2,3,0) = 24070. * -1. * sin(1.)
+v(1,3,0) = 24.070 * -1. * cos(1.) /vunit
+v(2,3,0) = 24.070 * -1. * sin(1.) /vunit
 v(3,3,0) = 0
-v(1,4,0) = 13060. * -1. * cos(1.)
-v(2,4,0) = 13060. * -1. * sin(1.)
+v(1,4,0) = 13.060 * -1. * cos(1.) /vunit
+v(2,4,0) = 13.060 * -1. * sin(1.) /vunit
 v(3,4,0) = 0
-v(1,5,0) = 9680. * -1. * cos(1.)
-v(2,5,0) = 9680. * -1. * sin(1.)
+v(1,5,0) = 9.680 * -1. * cos(1.) /vunit
+v(2,5,0) = 9.680 * -1. * sin(1.) /vunit
 v(3,5,0) = 0
-v(1,6,0) = 6800. * -1. * cos(1.)
-v(2,6,0) = 6800. * -1. * sin(1.)
+v(1,6,0) = 6.800 * -1. * cos(1.) /vunit
+v(2,6,0) = 6.800 * -1. * sin(1.) /vunit
 v(3,6,0) = 0
-v(1,7,0) = 5430. * -1. * cos(1.)
-v(2,7,0) = 5430. * -1. * sin(1.)
+v(1,7,0) = 5.430 * -1. * cos(1.) /vunit
+v(2,7,0) = 5.430 * -1. * sin(1.) /vunit
 v(3,7,0) = 0
 
 DO i = 1, n-1
@@ -281,6 +307,7 @@ GPE = GPE*0.5
 DO i = 1,n
     E_check = E_check + 0.5*M(i)*absv_sq(i) + GPE(i)
 END DO
+
 !WRITE(6,*) "Current Energy error"
 !WRITE(6,*) E_0 - E_check
 
@@ -328,10 +355,14 @@ END DO
             a(:,:,-2) = a(:,:,-1)
             a(:,:,-1) = a_int(:,:,1)
 
+            write(6,*) v(:,:,:)
+
             v(:,:,-4) = v(:,:,-2)
             v(:,:,-3) = v_int(:,:,2)
             v(:,:,-2) = v(:,:,-1)
             v(:,:,-1) = v_int(:,:,1)
+
+            write(6,*) v(:,:,:)
 
 
         END IF
@@ -342,8 +373,8 @@ END DO
 
 
 
-    !Write every 500th step to log files
-    IF ((MOD(stepno, 500) == 0) .and. (lg == 'y')) THEN
+    !Write every 100th step to log files
+    IF ((MOD(stepno, 10) == 0) .and. (lg == 'y')) THEN
         WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1)
         WRITE(3,*) time, ',', dist(1,1,2), ',', dist(2,1,2), ',', dist(3,1,2)
         WRITE(4,*) time, ',', dist(1,1,3), ',', dist(2,1,3), ',', dist(3,1,3)
@@ -357,7 +388,7 @@ END DO
     time = time + dt
     stepno = stepno + 1
     counter = counter + 1
-    IF (time > (num_yr * 31536000.)) EXIT
+    IF (time * tunit > (num_yr * year)) EXIT
 END DO
 
 IF (lg == 'y') THEN
@@ -398,7 +429,8 @@ DO i = 1,n
     END DO
 END DO
 
-WRITE(6,*) (dt)
+WRITE(6,*) dt * tunit, "seconds"
+WRITE(6,*) time * tunit / year, "years"
 
 !Loop through each body to find GPE of each
 GPE = 0
@@ -435,6 +467,6 @@ WRITE(6,*) ((E_1/E_0) * 100)
 
 WRITE(6,*) "Absolute distance from the Sun (AU)"
 DO k = 1,7
-    WRITE(6,*) sqrt(s_sq(1,k))/AU
+    WRITE(6,*) (sqrt(s_sq(1,k)) * pc/AU)
 END DO
 END PROGRAM solar_sim
