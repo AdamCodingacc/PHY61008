@@ -201,8 +201,6 @@ IF (lg == 'y') THEN
     OPEN(10,file = 'Neptune_Motion.csv')
 END IF
 
-OPEN(11, file = 'Energy_err.csv')
-
 
 !============================================================================================================
 !Bootstrap
