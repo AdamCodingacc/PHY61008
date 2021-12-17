@@ -11,6 +11,7 @@ PROGRAM solar_sim
     INTEGER :: n, i, j, k, z, stepno, counter !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
+
 ! N body units
    G=6.67e-8                 ! G in cgs
    pc=3.086e18              ! pc in cm
@@ -40,16 +41,16 @@ PROGRAM solar_sim
 n = 7
 dt = 1.e-10
 RelErr = 5.e-5
-Small = 1.e-7
+Small = 1.e-4
 errcoeff = 19./270. !Saves doing the calculation every loop
 !Divide by msun for N body units
-M(1) = 1.99e30 / msun
-M(2) = 5.97e24 / msun
-M(3) = 6.4171e23 / msun
-M(4) = 1.898e27 / msun
-M(5) = 5.683e26 / msun
-M(6) = 8.681e25 / msun
-M(7) = 1.024e26 / msun
+M(1) = 1.99e33 / msun
+M(2) = 5.97e27 / msun
+M(3) = 6.4171e26 / msun
+M(4) = 1.898e30 / msun
+M(5) = 5.683e29 / msun
+M(6) = 8.681e28 / msun
+M(7) = 1.024e29 / msun
 
 !Empty array variables
 num_yr = 0
@@ -110,16 +111,16 @@ v(1,7,0) = 5.430 * -1. * cos(1.) /vunit
 v(2,7,0) = 5.430 * -1. * sin(1.) /vunit
 v(3,7,0) = 0
 
-DO i = 1, n-1
-    COM(:) = COM(:) + r(:,i,0)*M(i)
-    COV(:) = COV(:) + v(:,i,0)*M(i)
-    Mtot = Mtot + M(i)
-END DO
+!DO i = 1, n-1
+    !COM(:) = COM(:) + r(:,i,0)*M(i)
+    !COV(:) = COV(:) + v(:,i,0)*M(i)
+    !Mtot = Mtot + M(i)
+!END DO
 
 !Correct for COM and COV
 DO i = 1,n
-    r(:,i,0) = r(:,i,0) - COM/Mtot
-    v(:,i,0) = v(:,i,0) - COV/Mtot
+    !r(:,i,0) = r(:,i,0) - COM/Mtot
+    !v(:,i,0) = v(:,i,0) - COV/Mtot
 
     DO k = 1,3
         absv_sq(i) = absv_sq(i) + v(k,i,0)**2
@@ -157,7 +158,7 @@ WRITE(6,*) "Position Vectors xyz (AU)"
 WRITE(6,*) ""
 !Print initial coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) (r(:,i,0)/AU)
+    WRITE(6,*) r(:,i,0) * pc/AU
 END DO
 
 WRITE(6,*) ""
@@ -239,9 +240,19 @@ DO k = 0,5
     time = time + dt
 END DO
 
+DO i = 1,n
+    WRITE(6,*) (r(:,i,0) * pc/AU)
+END DO
 !====================================================================================================================
 !ABM Method
 DO
+
+    DO i = 1,n
+        DO k = 0,2
+            WRITE(6,*) (r(:,2,k) * pc/AU)
+        END DO
+    END DO
+
     !Clear new acceleration to not factor into calculation
     a(:,:,1) = 0
 
@@ -308,16 +319,6 @@ DO i = 1,n
     E_check = E_check + 0.5*M(i)*absv_sq(i) + GPE(i)
 END DO
 
-!WRITE(6,*) "Current Energy error"
-!WRITE(6,*) E_0 - E_check
-
-!Write every 100th step energy error to a log file
-!IF ((MOD(stepno, 250) == 0)) THEN
-!    WRITE(11,*) time, ',', (E_0 - E_check), ',', (E_check / E_0)
-!END IF
-
-
-
 
 
     !Ensure enough data points are stored
@@ -333,6 +334,7 @@ END DO
                 a(:,:,-k) = a(:,:,-2*k)
                 v(:,:,-k) = v(:,:,-2*k)
             END DO
+
         END IF
 
         !Check if error from predictor-corrector is too large
@@ -355,15 +357,10 @@ END DO
             a(:,:,-2) = a(:,:,-1)
             a(:,:,-1) = a_int(:,:,1)
 
-            write(6,*) v(:,:,:)
-
             v(:,:,-4) = v(:,:,-2)
             v(:,:,-3) = v_int(:,:,2)
             v(:,:,-2) = v(:,:,-1)
             v(:,:,-1) = v_int(:,:,1)
-
-            write(6,*) v(:,:,:)
-
 
         END IF
 
@@ -408,25 +405,21 @@ WRITE(6,*) "Position Vectors xyz (AU)"
 WRITE(6,*) ""
 !Print final coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) (r(:,i,0)/AU)
+    WRITE(6,*) (r(:,i,0) * pc/AU)
 END DO
 
 WRITE(6,*) ""
 WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 DO i = 1,n
-    DO k = -3,1
-        WRITE(6,*) (v(:,i,k))
-    END DO
+    WRITE(6,*) (v(:,i,0))
 END DO
 
 WRITE(6,*) ""
 WRITE(6,*) "Acceleration xyz (ms^-2)"
 WRITE(6,*) ""
 DO i = 1,n
-    DO k = -3,1
-        WRITE(6,*) (a(:,i,k))
-    END DO
+    WRITE(6,*) (a(:,i,0))
 END DO
 
 WRITE(6,*) dt * tunit, "seconds"
@@ -467,6 +460,6 @@ WRITE(6,*) ((E_1/E_0) * 100)
 
 WRITE(6,*) "Absolute distance from the Sun (AU)"
 DO k = 1,7
-    WRITE(6,*) (sqrt(s_sq(1,k)) * pc/AU)
+    WRITE(6,*) sqrt(s_sq(1,k)) * pc/AU
 END DO
 END PROGRAM solar_sim

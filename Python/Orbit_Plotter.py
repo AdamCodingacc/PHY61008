@@ -84,7 +84,7 @@ image.set_xlim(-40, 40)
 image.set_ylim(-40, 40)
 image.set_zlim(-40, 40)
 """
-"""
+
 plt.plot(xsun/AU, ysun/AU, zsun/AU, '-', c='yellow')
 plt.plot(xear/AU, year/AU, zear/AU,'-', c='b')
 plt.plot(xjup/AU, yjup/AU, zjup/AU, '-', c='saddlebrown')
@@ -92,7 +92,5 @@ plt.plot(xmars/AU, ymars/AU, zmars/AU,'-', c='r')
 plt.plot(xsat/AU, ysat/AU, zsat/AU,'-', c='magenta')
 plt.plot(xura/AU, yura/AU, zura/AU,'-', c='cyan')
 plt.plot(xnep/AU, ynep/AU, znep/AU,'-', c='black')
-"""
-plt.plot(xjup, yjup, zjup, '-', c='red')
 
 plt.show()
