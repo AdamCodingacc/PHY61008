@@ -18,6 +18,7 @@ PROGRAM solar_sim
    msun=1.99e33              ! solar mass in g
    year=60.*60.*24.*365.25     ! year in s
    AU=1.496e13                ! au in cm
+
 !
    munit=1.
    runit=1.
@@ -53,74 +54,75 @@ M(6) = 8.681e28 / msun
 M(7) = 1.024e29 / msun
 
 !Empty array variables
-num_yr = 0
-s_sq = 0
-time = 0
-GPE = 0
-absv_sq = 0
-E_0 = 0
-E_1 = 0
-a = 0
-v = 0
-r = 0
-COM = 0
-COV = 0
+num_yr = 0.
+s_sq = 0.
+time = 0.
+GPE = 0.
+absv_sq = 0.
+E_0 = 0.
+E_1 = 0.
+a = 0.
+v = 0.
+r = 0.
+COM = 0.
+COV = 0.
 stepno = 0
 counter = 0
 
 !Initialize starting positions
 !Multiply by AU/pc for N body units
-r(:,1,0) = 0 !System centred around Sun
+r(:,1,0) = 0. !System centred around Sun
 r(1,2,0) = sin(1.) * -1. * AU/pc
 r(2,2,0) = cos(1.) * AU/pc
-r(3,2,0) = 0
+r(3,2,0) = 0.
 r(1,3,0) = 1.52 * sin(1.) * -1. * AU/pc
 r(2,3,0) = 1.52 * cos(1.) * AU/pc
-r(3,3,0) = 0
+r(3,3,0) = 0.
 r(1,4,0) = 5.2 * sin(1.) * -1. * AU/pc
 r(2,4,0) = 5.2 * cos(1.) * AU/pc
-r(3,4,0) = 0
+r(3,4,0) = 0.
 r(1,5,0) = 9.583 * sin(1.) * -1. * AU/pc
 r(2,5,0) = 9.583 * cos(1.) * AU/pc
-r(3,5,0) = 0
+r(3,5,0) = 0.
 r(1,6,0) = 19.201 * sin(1.) * -1. * AU/pc
 r(2,6,0) = 19.201 * cos(1.) * AU/pc
-r(3,6,0) = 0
+r(3,6,0) = 0.
 r(1,7,0) = 30.07 * sin(1.) * -1. * AU/pc
 r(2,7,0) = 30.07 * cos(1.) * AU/pc
-r(3,7,0) = 0
+r(3,7,0) = 0.
+
 
 !Initialize starting velocities
-v(:,1,0) = 0
+v(:,1,0) = 0.
 v(1,2,0) = 29.780 * -1. * cos(1.) /vunit
 v(2,2,0) = 29.780 * -1. * sin(1.) /vunit
-v(3,2,0) = 0
+v(3,2,0) = 0.
 v(1,3,0) = 24.070 * -1. * cos(1.) /vunit
 v(2,3,0) = 24.070 * -1. * sin(1.) /vunit
-v(3,3,0) = 0
+v(3,3,0) = 0.
 v(1,4,0) = 13.060 * -1. * cos(1.) /vunit
 v(2,4,0) = 13.060 * -1. * sin(1.) /vunit
-v(3,4,0) = 0
+v(3,4,0) = 0.
 v(1,5,0) = 9.680 * -1. * cos(1.) /vunit
 v(2,5,0) = 9.680 * -1. * sin(1.) /vunit
-v(3,5,0) = 0
+v(3,5,0) = 0.
 v(1,6,0) = 6.800 * -1. * cos(1.) /vunit
 v(2,6,0) = 6.800 * -1. * sin(1.) /vunit
-v(3,6,0) = 0
+v(3,6,0) = 0.
 v(1,7,0) = 5.430 * -1. * cos(1.) /vunit
 v(2,7,0) = 5.430 * -1. * sin(1.) /vunit
-v(3,7,0) = 0
+v(3,7,0) = 0.
 
-!DO i = 1, n-1
-    !COM(:) = COM(:) + r(:,i,0)*M(i)
-    !COV(:) = COV(:) + v(:,i,0)*M(i)
-    !Mtot = Mtot + M(i)
-!END DO
+DO i = 1, n
+    COM(:) = COM(:) + r(:,i,0)*M(i)
+    COV(:) = COV(:) + v(:,i,0)*M(i)
+    Mtot = Mtot + M(i)
+END DO
 
 !Correct for COM and COV
 DO i = 1,n
-    !r(:,i,0) = r(:,i,0) - COM/Mtot
-    !v(:,i,0) = v(:,i,0) - COV/Mtot
+    r(:,i,0) = r(:,i,0) - COM/Mtot
+    v(:,i,0) = v(:,i,0) - COV/Mtot
 
     DO k = 1,3
         absv_sq(i) = absv_sq(i) + v(k,i,0)**2
@@ -166,18 +168,18 @@ WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 !Print initial coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) (v(:,i,0))
+    WRITE(6,*) (v(:,i,0)) * vunit * 1000
 END DO
 
 WRITE(6,*) ""
-WRITE(6,*) "Acceleration xyz (ms^-2)"
+WRITE(6,*) "Acceleration xyz "
 WRITE(6,*) ""
 DO i = 1,n
     WRITE(6,*) (a(:,i,0))
 END DO
 
 WRITE(6,*) ""
-WRITE(6,*) "Initial Energy of System (J)"
+WRITE(6,*) "Initial Energy of System"
 WRITE(6,*) ""
 WRITE(6,*) (E_0)
 
@@ -209,7 +211,8 @@ DO k = 0,5
     !Find new position, r, after time-step
     !Comes at the start of the array to get the new position before other variables updated
     r(:,:,0) = r(:,:,0) + v(:,:,0)*dt + 0.5*a(:,:,0)*dt**2
-
+    r(:,:,1) = r(:,:,0)
+    r(:,:,2) = r(:,:,1)
     !Shift previous values down arrays
     DO z = -3,-1
         a(:,:,z) = a(:,:,z+1)
@@ -238,18 +241,14 @@ DO k = 0,5
     time = time + dt
 END DO
 
-DO i = 1,n
-    WRITE(6,*) (r(:,i,0) * pc/AU)
-END DO
+!DO i = 1,n
+!    WRITE(6,*) (r(:,i,0) * pc/AU)
+!END DO
 !====================================================================================================================
 !ABM Method
 DO
-
-    DO i = 1,n
-        DO k = 0,2
-            WRITE(6,*) (r(:,2,k) * pc/AU)
-        END DO
-    END DO
+    !Print current Earth distance
+    WRITE(6,*) (r(:,2,0) * pc/AU)
 
     !Clear new acceleration to not factor into calculation
     a(:,:,1) = 0
@@ -410,7 +409,7 @@ WRITE(6,*) ""
 WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 DO i = 1,n
-    WRITE(6,*) (v(:,i,0))
+    WRITE(6,*) (v(:,i,0)) * vunit * 1000
 END DO
 
 WRITE(6,*) ""
@@ -451,7 +450,7 @@ END DO
 
 !Report final energy and accuracy test
 WRITE(6,*) ""
-WRITE(6,*) "Final Energy of System (J)"
+WRITE(6,*) "Final Energy of System"
 WRITE(6,*) (E_1)
 WRITE(6,*) "Percentage of Initial Energy Retained"
 WRITE(6,*) ((E_1/E_0) * 100)

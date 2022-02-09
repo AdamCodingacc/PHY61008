@@ -84,7 +84,7 @@ v(1,7,0) = 5430. * -1. * cos(1.)
 v(2,7,0) = 5430. * -1. * sin(1.)
 v(3,7,0) = 0
 
-DO i = 1, n-1
+DO i = 1, n
     COM(:) = COM(:) + r(:,i,0)*M(i)
     COV(:) = COV(:) + v(:,i,0)*M(i)
     Mtot = Mtot + M(i)
@@ -99,6 +99,8 @@ DO i = 1,n
         absv_sq(i) = absv_sq(i) + v(k,i,0)**2
     END DO
 END DO
+
+!==================================================================================================================
 
 !Calculate initial conditions and thus initial acceleration
 DO i = 1,n
@@ -175,6 +177,8 @@ END IF
 
 OPEN(11, file = 'Energy_err.csv')
 
+!================================================================================================================
+
 !Bootstrap
 DO k = 0,5
 
@@ -210,8 +214,14 @@ DO k = 0,5
     time = time + dt
 END DO
 
+!==================================================================================================================
+
 !ABM Method
 DO
+
+    !Print current Earth distance
+    !WRITE(6,*) (r(:,2,0) /AU)
+
     !Clear new acceleration to not factor into calculation
     a(:,:,1) = 0
 
