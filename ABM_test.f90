@@ -7,18 +7,73 @@ PROGRAM solar_sim
     DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:2), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
     DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dt, G, time, num_yr, RelErr, Small, errcoeff
-    DOUBLEPRECISION :: msun, year, munit, runit, tunit, vunit, pc
+    DOUBLEPRECISION :: year, pc, msun, munit, runit, tunit, vunit
     INTEGER :: n, i, j, k, z, stepno, counter !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
+r = 0.
+M = 0.
+v = 0.
+a = 0.
+a_int = 0.
+v_int = 0.
 
-! N body units
-   G=6.67e-8                 ! G in cgs
-   pc=3.086e18              ! pc in cm
-   msun=1.99e33              ! solar mass in g
+COM = 0.
+COV = 0.
+s_sq = 0.
+s = 0.
+GPE = 0.
+absv_sq = 0.
+dist = 0.
+
+E_0 = 0.
+E_1 = 0.
+E_check = 0.
+Mtot = 0.
+AU = 0.
+dt = 0.
+G = 0.
+time = 0.
+num_yr = 0.
+RelErr = 0.
+Small = 0.
+errcoeff = 0.
+
+
+msun = 0.
+year = 0.
+munit = 0.
+runit = 0.
+tunit = 0.
+vunit = 0.
+pc = 0.
+
+n = 0
+i = 0
+j = 0
+k = 0
+z = 0
+stepno = 0
+counter = 0
+
+
+
+!Initialize variables
+
+n = 7
+
+errcoeff = 19./270. !Saves doing the calculation every loop
+
+
+
+
+! nbody units
+! constants
+   G=6.67d-8                 ! G in cgs
+   pc=3.086d18              ! pc in cm
+   msun=1.99d33        ! solar mass in g
    year=60.*60.*24.*365.25     ! year in s
-   AU=1.496e13                ! au in cm
-
+   AU=1.50d13                ! au in cm
 !
    munit=1.
    runit=1.
@@ -33,85 +88,70 @@ PROGRAM solar_sim
 ! time in yr
    tunit=SQRT((runit*pc**3)/(G*munit*msun))/year
 ! velocity in km/s
-   vunit=runit*pc/(tunit*year*1.e5)
+   vunit=runit*pc/(tunit*year*1.d5)
    write(6,*) 'tunit/yrs', tunit
    write(6,*) 'vunit/km/s', vunit
-! ====================================
 
-!Initialize variables
-n = 7
-dt = 1.e-10
-RelErr = 5.e-5
-Small = 1.e-4
-errcoeff = 19./270. !Saves doing the calculation every loop
-!Divide by msun for N body units
-M(1) = 1.99e33 / msun
-M(2) = 5.97e27 / msun
-M(3) = 6.4171e26 / msun
-M(4) = 1.898e30 / msun
-M(5) = 5.683e29 / msun
-M(6) = 8.681e28 / msun
-M(7) = 1.024e29 / msun
+    RelErr= 5e-5
+    Small = 1.e-4
+    dt=1.e-10
 
-!Empty array variables
-num_yr = 0.
-s_sq = 0.
-time = 0.
-GPE = 0.
-absv_sq = 0.
-E_0 = 0.
-E_1 = 0.
-a = 0.
-v = 0.
-r = 0.
-COM = 0.
-COV = 0.
-stepno = 0
-counter = 0
+M(1) = 1.99e30 !sun
+M(2) = 5.97e24 !earth
+M(3) = 6.4171e23 !mars
+M(4) = 1.898e27 !jup
+M(5) = 5.683e26 !sat
+M(6) = 8.681e25 !Ura
+M(7) = 1.024e26 !Nept
+
+M = M * 1000
+M = M / msun
 
 !Initialize starting positions
-!Multiply by AU/pc for N body units
-r(:,1,0) = 0. !System centred around Sun
-r(1,2,0) = sin(1.) * -1. * AU/pc
-r(2,2,0) = cos(1.) * AU/pc
-r(3,2,0) = 0.
-r(1,3,0) = 1.52 * sin(1.) * -1. * AU/pc
-r(2,3,0) = 1.52 * cos(1.) * AU/pc
-r(3,3,0) = 0.
-r(1,4,0) = 5.2 * sin(1.) * -1. * AU/pc
-r(2,4,0) = 5.2 * cos(1.) * AU/pc
-r(3,4,0) = 0.
-r(1,5,0) = 9.583 * sin(1.) * -1. * AU/pc
-r(2,5,0) = 9.583 * cos(1.) * AU/pc
-r(3,5,0) = 0.
-r(1,6,0) = 19.201 * sin(1.) * -1. * AU/pc
-r(2,6,0) = 19.201 * cos(1.) * AU/pc
-r(3,6,0) = 0.
-r(1,7,0) = 30.07 * sin(1.) * -1. * AU/pc
-r(2,7,0) = 30.07 * cos(1.) * AU/pc
-r(3,7,0) = 0.
+r(:,1,0) = 0 !System centred around Sun
+r(1,2,0) = sin(1.) * -1.
+r(2,2,0) = cos(1.)
+r(3,2,0) = 0
+r(1,3,0) = 1.52 * sin(1.) * -1.
+r(2,3,0) = 1.52 * cos(1.)
+r(3,3,0) = 0
+r(1,4,0) = 5.2 * sin(1.) * -1.
+r(2,4,0) = 5.2 * cos(1.)
+r(3,4,0) = 0
+r(1,5,0) = 9.583 * sin(1.) * -1.
+r(2,5,0) = 9.583 * cos(1.)
+r(3,5,0) = 0
+r(1,6,0) = 19.201 * sin(1.) * -1.
+r(2,6,0) = 19.201 * cos(1.)
+r(3,6,0) = 0
+r(1,7,0) = 30.07 * sin(1.) * -1.
+r(2,7,0) = 30.07 * cos(1.)
+r(3,7,0) = 0
 
+r = r * AU/pc
 
 !Initialize starting velocities
-v(:,1,0) = 0.
-v(1,2,0) = 29.780 * -1. * cos(1.) /vunit
-v(2,2,0) = 29.780 * -1. * sin(1.) /vunit
-v(3,2,0) = 0.
-v(1,3,0) = 24.070 * -1. * cos(1.) /vunit
-v(2,3,0) = 24.070 * -1. * sin(1.) /vunit
-v(3,3,0) = 0.
-v(1,4,0) = 13.060 * -1. * cos(1.) /vunit
-v(2,4,0) = 13.060 * -1. * sin(1.) /vunit
-v(3,4,0) = 0.
-v(1,5,0) = 9.680 * -1. * cos(1.) /vunit
-v(2,5,0) = 9.680 * -1. * sin(1.) /vunit
-v(3,5,0) = 0.
-v(1,6,0) = 6.800 * -1. * cos(1.) /vunit
-v(2,6,0) = 6.800 * -1. * sin(1.) /vunit
-v(3,6,0) = 0.
-v(1,7,0) = 5.430 * -1. * cos(1.) /vunit
-v(2,7,0) = 5.430 * -1. * sin(1.) /vunit
-v(3,7,0) = 0.
+v(:,1,0) = 0
+v(1,2,0) = 29.780 * -1. * cos(1.)
+v(2,2,0) = 29.780 * -1. * sin(1.)
+v(3,2,0) = 0
+v(1,3,0) = 24.070 * -1. * cos(1.)
+v(2,3,0) = 24.070 * -1. * sin(1.)
+v(3,3,0) = 0
+v(1,4,0) = 13.060 * -1. * cos(1.)
+v(2,4,0) = 13.060 * -1. * sin(1.)
+v(3,4,0) = 0
+v(1,5,0) = 9.680 * -1. * cos(1.)
+v(2,5,0) = 9.680 * -1. * sin(1.)
+v(3,5,0) = 0
+v(1,6,0) = 6.800 * -1. * cos(1.)
+v(2,6,0) = 6.800 * -1. * sin(1.)
+v(3,6,0) = 0
+v(1,7,0) = 5.430 * -1. * cos(1.)
+v(2,7,0) = 5.430 * -1. * sin(1.)
+v(3,7,0) = 0
+
+v = v / vunit
 
 DO i = 1, n
     COM(:) = COM(:) + r(:,i,0)*M(i)
@@ -129,7 +169,8 @@ DO i = 1,n
     END DO
 END DO
 
-!====================================================================================================================
+!==================================================================================================================
+
 !Calculate initial conditions and thus initial acceleration
 DO i = 1,n
             DO j = 1,n
@@ -139,10 +180,12 @@ DO i = 1,n
                 !Find absolute distance squared between bodies i & j
                 s_sq(i,j) = ((r(1,j,0) - r(1,i,0))**2 + (r(2,j,0) - r(2,i,0))**2 + (r(3,j,0) - r(3,i,0))**2)
 
-                GPE(i) = GPE(i) - G*M(i)*M(j)/sqrt(s_sq(i,j))
+                !GPE(i) = GPE(i) - M(i)*M(j)/sqrt(s_sq(i,j))
+                GPE(i) = GPE(i) - G * M(i)*M(j)/sqrt(s_sq(i,j))
 
 
                 !Need + so each object does not overwrite previous
+                !a(:,i,0) = a(:,i,0) + (M(j) * (r(:,j,0) - r(:,i,0)) * (s_sq(i,j)**-1.5))
                 a(:,i,0) = a(:,i,0) + (G * M(j) * (r(:,j,0) - r(:,i,0)) * (s_sq(i,j)**-1.5))
 
             END DO
@@ -160,7 +203,7 @@ WRITE(6,*) "Position Vectors xyz (AU)"
 WRITE(6,*) ""
 !Print initial coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) r(:,i,0) * pc/AU
+    WRITE(6,*) (r(:,i,0) * pc/AU)
 END DO
 
 WRITE(6,*) ""
@@ -168,20 +211,20 @@ WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 !Print initial coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) (v(:,i,0)) * vunit * 1000
+    WRITE(6,*) v(:,i,0) * vunit * 1000
 END DO
 
 WRITE(6,*) ""
-WRITE(6,*) "Acceleration xyz "
+WRITE(6,*) "Acceleration xyz (ms^-2)"
 WRITE(6,*) ""
 DO i = 1,n
-    WRITE(6,*) (a(:,i,0))
+    WRITE(6,*) a(:,i,0)
 END DO
 
 WRITE(6,*) ""
-WRITE(6,*) "Initial Energy of System"
+WRITE(6,*) "Initial Energy of System (J)"
 WRITE(6,*) ""
-WRITE(6,*) (E_0)
+WRITE(6,*) E_0
 
 WRITE(6,*) ""
 WRITE(6,*) "Would you like to save this run? (y/n)"
@@ -203,16 +246,17 @@ IF (lg == 'y') THEN
     OPEN(10,file = 'Neptune_Motion.csv')
 END IF
 
+OPEN(11, file = 'Energy_err.csv')
 
-!============================================================================================================
+!================================================================================================================
+
 !Bootstrap
 DO k = 0,5
 
     !Find new position, r, after time-step
     !Comes at the start of the array to get the new position before other variables updated
     r(:,:,0) = r(:,:,0) + v(:,:,0)*dt + 0.5*a(:,:,0)*dt**2
-    r(:,:,1) = r(:,:,0)
-    r(:,:,2) = r(:,:,1)
+
     !Shift previous values down arrays
     DO z = -3,-1
         a(:,:,z) = a(:,:,z+1)
@@ -229,6 +273,7 @@ DO k = 0,5
 
 
             !Find acceleration on object i in each dimension
+            !a(:,i,0) = a(:,i,0) + M(j) * (r(:,j,0) - r(:,i,0))*(s_sq(i,j)**-1.5)
             a(:,i,0) = a(:,i,0) + G * M(j) * (r(:,j,0) - r(:,i,0))*(s_sq(i,j)**-1.5)
 
 
@@ -241,14 +286,23 @@ DO k = 0,5
     time = time + dt
 END DO
 
-!DO i = 1,n
-!    WRITE(6,*) (r(:,i,0) * pc/AU)
-!END DO
-!====================================================================================================================
+!==================================================================================================================
+
 !ABM Method
 DO
+
     !Print current Earth distance
-    WRITE(6,*) (r(:,2,0) * pc/AU)
+    !WRITE(6,*) (r(:,2,0) * pc/AU)
+    !WRITE(6,*) (v(:,2,0)) * vunit * 1000
+    !WRITE(6,*) ""
+    !WRITE(6,*) (r(:,2,1) * pc/AU)
+    !WRITE(6,*) (v(:,2,1)) * vunit * 1000
+    !WRITE(6,*) ""
+    !WRITE(6,*) (r(:,2,2) * pc/AU)
+    !WRITE(6,*) (v(:,2,2)) * vunit * 1000
+    !WRITE(6,*) "step"
+
+
 
     !Clear new acceleration to not factor into calculation
     a(:,:,1) = 0
@@ -265,6 +319,7 @@ DO
 
             s_sq(i,j) = ((r(1,j,1) - r(1,i,1))**2 + (r(2,j,1) - r(2,i,1))**2 + (r(3,j,1) - r(3,i,1))**2)
 
+            !a(:,i,1) = a(:,i,1) + M(j) * (r(:,j,1) - r(:,i,1))*(s_sq(i,j)**-1.5)
             a(:,i,1) = a(:,i,1) + G * M(j) * (r(:,j,1) - r(:,i,1))*(s_sq(i,j)**-1.5)
         END DO
     END DO
@@ -285,6 +340,7 @@ DO
 
             s_sq(i,j) = ((r(1,j,2) - r(1,i,2))**2 + (r(2,j,2) - r(2,i,2))**2 + (r(3,j,2) - r(3,i,2))**2)
 
+            !a(:,i,2) = a(:,i,2) + M(j) * (r(:,j,2) - r(:,i,2))*(s_sq(i,j)**-1.5)
             a(:,i,2) = a(:,i,2) + G * M(j) * (r(:,j,2) - r(:,i,2))*(s_sq(i,j)**-1.5)
         END DO
     END DO
@@ -307,7 +363,8 @@ DO i = 1,n
             DO j = 1,n
             !skip loop if i & j same (no force exerted by body on self)
             IF (i == j) CYCLE
-                GPE(i) = GPE(i) - G*M(i)*M(j)/sqrt(s_sq(i,j))
+                !GPE(i) = GPE(i) - M(i)*M(j)/sqrt(s_sq(i,j))
+                GPE(i) = GPE(i) - G * M(i)*M(j)/sqrt(s_sq(i,j))
             END DO
         END DO
 GPE = GPE*0.5
@@ -315,6 +372,15 @@ GPE = GPE*0.5
 DO i = 1,n
     E_check = E_check + 0.5*M(i)*absv_sq(i) + GPE(i)
 END DO
+!WRITE(6,*) "Current Energy error"
+!WRITE(6,*) E_0 - E_check
+
+!Write every 100th step energy error to a log file
+IF ((MOD(stepno, 250) == 0)) THEN
+    WRITE(11,*) time, ',', E_0 - E_check, ',', E_check / E_0
+END IF
+
+
 
 
 
@@ -331,8 +397,9 @@ END DO
                 a(:,:,-k) = a(:,:,-2*k)
                 v(:,:,-k) = v(:,:,-2*k)
             END DO
-
-        END IF
+            !WRITE(6,*) r(:,2,2) * pc/AU
+            !WRITE(6,*) r(:,2,1) *pc/AU
+    END IF
 
         !Check if error from predictor-corrector is too large
         IF (errcoeff * MAXVAL(ABS(r(:,:,2) - r(:,:,1)) / (ABS(r(:,:,2)) + Small)) > RelErr) THEN
@@ -359,6 +426,7 @@ END DO
             v(:,:,-2) = v(:,:,-1)
             v(:,:,-1) = v_int(:,:,1)
 
+            WRITE(6,*) "Halved"
         END IF
 
         !Reset counter to let old data fill up
@@ -367,8 +435,8 @@ END DO
 
 
 
-    !Write every 100th step to log files
-    IF ((MOD(stepno, 10) == 0) .and. (lg == 'y')) THEN
+    !Write every 500th step to log files
+    IF ((MOD(stepno, 500) == 0) .and. (lg == 'y')) THEN
         WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1)
         WRITE(3,*) time, ',', dist(1,1,2), ',', dist(2,1,2), ',', dist(3,1,2)
         WRITE(4,*) time, ',', dist(1,1,3), ',', dist(2,1,3), ',', dist(3,1,3)
@@ -382,7 +450,7 @@ END DO
     time = time + dt
     stepno = stepno + 1
     counter = counter + 1
-    IF (time * tunit > (num_yr * year)) EXIT
+    IF (time * tunit> (num_yr * year)) EXIT
 END DO
 
 IF (lg == 'y') THEN
@@ -402,25 +470,28 @@ WRITE(6,*) "Position Vectors xyz (AU)"
 WRITE(6,*) ""
 !Print final coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) (r(:,i,0) * pc/AU)
+    WRITE(6,*) (r(:,i,0) * (pc/AU))
 END DO
 
 WRITE(6,*) ""
 WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 DO i = 1,n
-    WRITE(6,*) (v(:,i,0)) * vunit * 1000
+    DO k = -3,1
+        WRITE(6,*) v(:,i,k) * vunit * 1000
+    END DO
 END DO
 
 WRITE(6,*) ""
 WRITE(6,*) "Acceleration xyz (ms^-2)"
 WRITE(6,*) ""
 DO i = 1,n
-    WRITE(6,*) (a(:,i,0))
+    DO k = -3,1
+        WRITE(6,*) a(:,i,k)
+    END DO
 END DO
 
-WRITE(6,*) dt * tunit, "seconds"
-WRITE(6,*) time * tunit / year, "years"
+WRITE(6,*) dt
 
 !Loop through each body to find GPE of each
 GPE = 0
@@ -432,6 +503,7 @@ DO i = 1,n
                 s_sq(i,j) = ((r(1,j,0) - r(1,i,0))**2 + (r(2,j,0) - r(2,i,0))**2 + (r(3,j,0) - r(3,i,0))**2)
 
                 !Sum calculated GPE
+                !GPE(i) = GPE(i) - M(i)*M(j)/sqrt(s_sq(i,j))
                 GPE(i) = GPE(i) - G*M(i)*M(j)/sqrt(s_sq(i,j))
         END DO
 
@@ -450,13 +522,16 @@ END DO
 
 !Report final energy and accuracy test
 WRITE(6,*) ""
-WRITE(6,*) "Final Energy of System"
-WRITE(6,*) (E_1)
+WRITE(6,*) "Final Energy of System (J)"
+WRITE(6,*) E_1
 WRITE(6,*) "Percentage of Initial Energy Retained"
-WRITE(6,*) ((E_1/E_0) * 100)
+WRITE(6,*) (E_1/E_0) * 100
 
 WRITE(6,*) "Absolute distance from the Sun (AU)"
 DO k = 1,7
-    WRITE(6,*) sqrt(s_sq(1,k)) * pc/AU
+    WRITE(6,*) sqrt(s_sq(1,k)) * pc /AU
 END DO
+WRITE(6,*) ""
+WRITE(6,*) time * tunit / year
+WRITE(6,*) dt
 END PROGRAM solar_sim

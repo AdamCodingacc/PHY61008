@@ -6,7 +6,7 @@ PROGRAM solar_sim
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
     DOUBLEPRECISION :: r(1:3, 1:7, 0:2), M(1:7), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:2), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), GPE(1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7)
-    DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dt, G, time, num_yr, RelErr, Small, errcoeff
+    DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dt, G, time, num_yr, RelErr, Small, errcoeff, KE, pot
     INTEGER :: n, i, j, k, z, stepno, counter !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
@@ -18,6 +18,8 @@ AU = 1.496e11
 RelErr = 5.e-13
 Small = 1.e-7
 errcoeff = 19./270. !Saves doing the calculation every loop
+
+!Masses in kg
 M(1) = 1.99e30
 M(2) = 5.97e24
 M(3) = 6.4171e23
@@ -64,6 +66,7 @@ r(2,7,0) = 30.07 * AU * cos(1.)
 r(3,7,0) = 0
 
 !Initialize starting velocities
+!Negative ensures planets begin orbit counterclockwise
 v(:,1,0) = 0
 v(1,2,0) = 29780. * -1. * cos(1.)
 v(2,2,0) = 29780. * -1. * sin(1.)
@@ -84,6 +87,7 @@ v(1,7,0) = 5430. * -1. * cos(1.)
 v(2,7,0) = 5430. * -1. * sin(1.)
 v(3,7,0) = 0
 
+!Find centre of mass and velocity
 DO i = 1, n
     COM(:) = COM(:) + r(:,i,0)*M(i)
     COV(:) = COV(:) + v(:,i,0)*M(i)
@@ -111,6 +115,7 @@ DO i = 1,n
                 !Find absolute distance squared between bodies i & j
                 s_sq(i,j) = ((r(1,j,0) - r(1,i,0))**2 + (r(2,j,0) - r(2,i,0))**2 + (r(3,j,0) - r(3,i,0))**2)
 
+                !GPE subtracted thus negative value
                 GPE(i) = GPE(i) - G*M(i)*M(j)/sqrt(s_sq(i,j))
 
 
@@ -122,10 +127,18 @@ DO i = 1,n
 
 GPE = GPE*0.5
 
-
+KE = 0
+pot = 0
 DO i = 1,n
+    !GPE added as components negative above
     E_0 = E_0 + 0.5*M(i)*absv_sq(i) + GPE(i)
+    KE = KE + 0.5*M(i)*absv_sq(i)
+    pot = pot + GPE(i)
 END DO
+
+WRITE(6,*) "KE/GPE ratio"
+WRITE(6,*) KE / pot
+
 
 WRITE(6,*) "Initial Conditions"
 WRITE(6,*) "Position Vectors xyz (AU)"
