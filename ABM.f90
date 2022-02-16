@@ -151,7 +151,7 @@ END DO
 WRITE(6,*) ""
 WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
-!Print initial coordinates of all bodies
+!Print initial velocity of all bodies in each direction
 DO i = 1,n
     WRITE(6,*) v(:,i,0)
 END DO
@@ -160,12 +160,14 @@ WRITE(6,*) ""
 WRITE(6,*) "Acceleration xyz (ms^-2)"
 WRITE(6,*) ""
 DO i = 1,n
+    !Print initial acceleration of all bodies in each direction
     WRITE(6,*) a(:,i,0)
 END DO
 
 WRITE(6,*) ""
 WRITE(6,*) "Initial Energy of System (J)"
 WRITE(6,*) ""
+!Total combined initial energy
 WRITE(6,*) E_0
 
 WRITE(6,*) ""
@@ -174,7 +176,7 @@ READ *, lg !Store user input to decide whether to log data
 WRITE(6,*) ""
 
 WRITE(6,*) "How many years would you like to simulate for?"
-READ *, num_yr !Store user input to decide whether to log data
+READ *, num_yr !Store user input to calculate time to exit loop
 WRITE(6,*) ""
 
 !Open Log Files to write data to if requested
@@ -188,6 +190,7 @@ IF (lg == 'y') THEN
     OPEN(10,file = 'Neptune_Motion.csv')
 END IF
 
+!Open file to log energy error for error testing
 OPEN(11, file = 'Energy_err.csv')
 
 !================================================================================================================
@@ -379,6 +382,7 @@ END IF
     IF (time > (num_yr * 31536000.)) EXIT
 END DO
 
+!Shut all logging files
 IF (lg == 'y') THEN
     CLOSE(2)
     CLOSE(3)
