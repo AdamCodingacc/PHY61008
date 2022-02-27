@@ -45,6 +45,9 @@ COM = 0
 COV = 0
 stepno = 0
 counter = 0
+dt = 0
+deltat = 0
+rtemp = 0
 
 !Initialize starting positions
 r(:,1,0) = 0 !System centred around Sun
@@ -311,7 +314,8 @@ DO
         !Ensure enough data points are stored
         IF (counter(z) > 6) THEN
             !Check if error from predictor-corrector is small enough and timesteps synched
-            IF (errcoeff * (ABS(r(:,z,2) - r(:,z,1)) / (ABS(r(:,z,2)) + Small)) < (RelErr * 0.01) .AND. MAXVAL(deltat) == dtmin) THEN
+            IF ((errcoeff * MAXVAL(ABS(r(:,z,2) - r(:,z,1)) / (ABS(r(:,z,2)) + Small)) < (RelErr * 0.01))&
+            .AND. (MAXVAL(deltat) == dtmin)) THEN
 
                 !Double timestep
                 dt(z) = dt(z) * 2.
@@ -324,8 +328,8 @@ DO
             END IF
 
             !Check if error from predictor-corrector is too large
-            IF (errcoeff * (ABS(r(:,:,2) - r(:,:,1)) / (ABS(r(:,:,2)) + Small)) > RelErr) THEN
-
+            IF (errcoeff * MAXVAL(ABS(r(:,z,2) - r(:,z,1)) / (ABS(r(:,z,2)) + Small)) > RelErr) THEN
+                WRITE(6,*) "halved"
                 !Halve timestep
                 dt(z) = dt(z) * 0.5
 
@@ -355,24 +359,32 @@ DO
             counter(z) = 0
         END IF
 
-
-
-
         counter(z) = counter(z) + 1
 
         !update that timestep has been reached
         deltat(z) = 0
-
+        !WRITE(6,*) stepno
     END DO
+
+    !Update minimum timestep
+    dtmin = MINVAL(dt)
 
     deltat(:) = deltat(:) + dtmin
 
+    !DO i = 1,n
+     !   WRITE(6,*) deltat(i)
+      !  WRITE(6,*) dt(i)
+    !END DO
+    !WRITE(6,*) dtmin
 
     !Write every 500th step to log files
-    IF ((MOD(stepno, 500) == 0) .and. (lg == 'y')) THEN
+    IF ((MOD(stepno, 500) == 0) .AND. (lg == 'y')) THEN
         DO i = 1,n
-            !Calculate absolute distance in each direction for logging files
-            dist(:, i, j) = r(:,j,1) - r(:,i,1)
+            DO j = 1,n
+                IF (i==j) CYCLE
+                !Calculate absolute distance in each direction for logging files
+                dist(:, i, j) = r(:,j,1) - r(:,i,1)
+            END DO
         END DO
         WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1)
         WRITE(3,*) time, ',', dist(1,1,2), ',', dist(2,1,2), ',', dist(3,1,2)
@@ -383,9 +395,13 @@ DO
         WRITE(10,*) time, ',', dist(1,1,7), ',', dist(2,1,7), ',', dist(3,1,7)
     END IF
 
-    !update elapsed time
+    !Update elapsed time
     time = time + dtmin
     stepno = stepno + 1
+
+
+
+    !WRITE(6,*) time
     IF (time > (num_yr * 31536000.)) EXIT
 END DO
 
@@ -429,6 +445,9 @@ DO i = 1,n
 END DO
 
 WRITE(6,*) dtmin
+DO i = 1,n
+    WRITE(6,*) dt(i)
+END DO
 
 !Loop through each body to find GPE of each
 GPE = 0
