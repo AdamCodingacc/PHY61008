@@ -241,6 +241,8 @@ END DO
 !Ensure that all bodies are done in the first iteration
 deltat(:) = dtmin
 dt(:) = dtmin
+
+accdo = .TRUE.
 !ABM Method
 DO
     DO z = 1,n
@@ -249,8 +251,6 @@ DO
         !skip bodies when their individual timestep has not been reached
         IF (deltat(z) /= dt(z)) CYCLE
 
-        !Clear predicted acceleration to not factor into calculation
-        a(:,z,1) = 0
 
         !Predict position and velocity using ABM predictor
         r(:,z,1) = r(:,z,0) + ((dt(z)/24.) * (-9.*v(:,z,-3) + 37.*v(:,z,-2) - 59.*v(:,z,-1) + 55.*v(:,z,0)))
@@ -265,6 +265,10 @@ DO
 
         !Use predicted position for body acceleration is being calculated for
         rtemp(:,z) = r(:,z,1)
+
+
+        !Clear predicted acceleration to not factor into calculation
+        a(:,z,1) = 0
 
         !Calculate acceleration for predicted position
         DO i = 1,n
@@ -316,7 +320,7 @@ DO
             !Check if error from predictor-corrector is small enough and timesteps synched
             IF ((errcoeff * MAXVAL(ABS(r(:,z,2) - r(:,z,1)) / (ABS(r(:,z,2)) + Small)) < (RelErr * 0.01))&
             .AND. (MAXVAL(deltat) == dtmin)) THEN
-
+                WRITE(6,*) z, "doubled"
                 !Double timestep
                 dt(z) = dt(z) * 2.
 
@@ -366,8 +370,10 @@ DO
         !WRITE(6,*) stepno
     END DO
 
-    !Update minimum timestep
-    dtmin = MINVAL(dt)
+    !Update minimum timestep if all synched
+    IF (MAXVAL(deltat) == 0) THEN
+        dtmin = MINVAL(dt)
+    END IF
 
     deltat(:) = deltat(:) + dtmin
 
@@ -444,7 +450,7 @@ DO i = 1,n
     END DO
 END DO
 
-WRITE(6,*) dtmin
+WRITE(6,*) "Min timestep", dtmin
 DO i = 1,n
     WRITE(6,*) dt(i)
 END DO
