@@ -244,7 +244,7 @@ DO
         !clear temporary interpolated values
 
         !skip bodies when their individual timestep has not been reached
-        IF (deltat(z) = dt(z)) CYCLE
+        IF (deltat(z) /= dt(z)) CYCLE
 
         !Clear predicted acceleration to not factor into calculation
         a(:,z,1) = 0
@@ -260,91 +260,93 @@ DO
             rtemp(:,i) = r(:,i,0) + v(:,i,0)*deltat(i) + 0.5*a(:,i,0)*deltat(i)**2
         END DO
 
-        !use predicted position for body acceleration is being calculated for
-        rtemp(:,z) = r(:,z,0)
+        !Use predicted position for body acceleration is being calculated for
+        rtemp(:,z) = r(:,z,1)
 
         !Calculate acceleration for predicted position
         DO i = 1,n
             DO j = 1,n
             IF (i == j) CYCLE
                 !calculate square of absolute distance
-                s_sq(i,j) = ((r(1,j,1) - r(1,i,1))**2 + (r(2,j,1) - r(2,i,1))**2 + (r(3,j,1) - r(3,i,1))**2)
+                s_sq(i,j) = ((rtemp(1,j) - rtemp(1,i))**2 + (rtemp(2,j) - rtemp(2,i))**2 + (rtemp(3,j) - rtemp(3,i))**2)
 
                 !Calculate new acceleration
-                a(:,i,1) = a(:,i,1) + G * M(j) * (r(:,j,1) - r(:,i,1))*(s_sq(i,j)**-1.5)
+                a(:,z,1) = a(:,z,1) + G * M(j) * (rtemp(:,j) - rtemp(:,i))*(s_sq(i,j)**-1.5)
             END DO
         END DO
 
 
 
         !ABM corrector
-        r(:,:,2) = r(:,:,0) + ((dtmin/24) * (v(:,:,-2) - 5.*v(:,:,-1) + 19.*v(:,:,0) + 9.*v(:,:,1)))
-        v(:,:,2) = v(:,:,0) + ((dtmin/24) * (a(:,:,-2) - 5.*a(:,:,-1) + 19.*a(:,:,0) + 9.*a(:,:,1)))
+        r(:,z,2) = r(:,z,0) + ((dt(z)/24) * (v(:,z,-2) - 5.*v(:,z,-1) + 19.*v(:,z,0) + 9.*v(:,z,1)))
+        v(:,z,2) = v(:,z,0) + ((dt(z)/24) * (a(:,z,-2) - 5.*a(:,z,-1) + 19.*a(:,z,0) + 9.*a(:,z,1)))
 
+        !Correct position for body acceleration is being calculated for
+        rtemp(:,z) = r(:,z,2)
 
         !Recalculate acceleration for corrected position
-        a(:,:,2) = 0
+        a(:,z,2) = 0
         DO i = 1,n
             DO j = 1,n
             IF (i == j) CYCLE
-                s_sq(i,j) = ((r(1,j,2) - r(1,i,2))**2 + (r(2,j,2) - r(2,i,2))**2 + (r(3,j,2) - r(3,i,2))**2)
+                s_sq(i,j) = ((rtemp(1,j) - rtemp(1,i))**2 + (rtemp(2,j) - rtemp(2,i))**2 + (rtemp(3,j) - rtemp(3,i))**2)
 
                 !Calculate corrected acceleration
-                a(:,i,2) = a(:,i,2) + G * M(j) * (r(:,j,2) - r(:,i,2))*(s_sq(i,j)**-1.5)
+                a(:,z,2) = a(:,z,2) + G * M(j) * (rtemp(:,j) - rtemp(:,i))*(s_sq(i,j)**-1.5)
             END DO
         END DO
 
         !Shift previous values down arrays
         DO i = -6,0
-            a(:,:,i) = a(:,:,i+1)
-            v(:,:,i) = v(:,:,i+1)
+            a(:,z,i) = a(:,z,i+1)
+            v(:,z,i) = v(:,z,i+1)
         END DO
 
         !Set corrected values as current position, velocity and acceleration
-        r(:,:,0) = r(:,:,2)
-        v(:,:,0) = v(:,:,2)
-        a(:,:,0) = a(:,:,2)
+        r(:,z,0) = r(:,z,2)
+        v(:,z,0) = v(:,z,2)
+        a(:,z,0) = a(:,z,2)
 
 
         !Ensure enough data points are stored
         IF (counter(z) > 6) THEN
-            !Check if error from predictor-corrector is small enough
-            IF (errcoeff * MAXVAL(ABS(r(:,:,2) - r(:,:,1)) / (ABS(r(:,:,2)) + Small)) < (RelErr * 0.01)) THEN
+            !Check if error from predictor-corrector is small enough and timesteps synched
+            IF (errcoeff * (ABS(r(:,z,2) - r(:,z,1)) / (ABS(r(:,z,2)) + Small)) < (RelErr * 0.01) .AND. MAXVAL(deltat) == dtmin) THEN
 
                 !Double timestep
-                dtmin = dtmin * 2.
+                dt(z) = dt(z) * 2.
 
                 !Omit alternate points to adjust timestep
                 DO k = 1,3
-                    a(:,:,-k) = a(:,:,-2*k)
-                    v(:,:,-k) = v(:,:,-2*k)
+                    a(:,z,-k) = a(:,z,-2*k)
+                    v(:,z,-k) = v(:,z,-2*k)
                 END DO
             END IF
 
             !Check if error from predictor-corrector is too large
-            IF (errcoeff * MAXVAL(ABS(r(:,:,2) - r(:,:,1)) / (ABS(r(:,:,2)) + Small)) > RelErr) THEN
+            IF (errcoeff * (ABS(r(:,:,2) - r(:,:,1)) / (ABS(r(:,:,2)) + Small)) > RelErr) THEN
 
                 !Halve timestep
-                dtmin = dtmin * 0.5
+                dt(z) = dt(z) * 0.5
 
                 !Interpolate previous data points for predictor-corrector
-                a_int(:,:,1) = (-5. * a(:,:,-4) + 28. * a(:,:,-3) - 70. * a(:,:,-2) + 140. * a(:,:,-1) + 35. * a(:,:,0)) / 128.
-                a_int(:,:,2) = (3. * a(:,:,-4) - 20. * a(:,:,-3) + 90. * a(:,:,-2) + 60. * a(:,:,-1) -5. * a(:,:,0)) / 128.
+                a_int(:,z,1) = (-5. * a(:,z,-4) + 28. * a(:,z,-3) - 70. * a(:,z,-2) + 140. * a(:,z,-1) + 35. * a(:,z,0)) / 128.
+                a_int(:,z,2) = (3. * a(:,z,-4) - 20. * a(:,z,-3) + 90. * a(:,z,-2) + 60. * a(:,z,-1) -5. * a(:,z,0)) / 128.
 
-                v_int(:,:,1) = (-5. * v(:,:,-4) + 28. * v(:,:,-3) - 70. * v(:,:,-2) + 140. * v(:,:,-1) + 35. * v(:,:,0)) / 128.
-                v_int(:,:,2) = (3. * v(:,:,-4) - 20. * v(:,:,-3) + 90. * v(:,:,-2) + 60. * v(:,:,-1) -5. * v(:,:,0)) / 128.
+                v_int(:,z,1) = (-5. * v(:,z,-4) + 28. * v(:,z,-3) - 70. * v(:,z,-2) + 140. * v(:,z,-1) + 35. * v(:,z,0)) / 128.
+                v_int(:,z,2) = (3. * v(:,z,-4) - 20. * v(:,z,-3) + 90. * v(:,z,-2) + 60. * v(:,z,-1) -5. * v(:,z,0)) / 128.
 
                 !Create new mesh
                 !-5 and -6 unimportant, not used in calculation & overwritten before next time-step change
-                a(:,:,-4) = a(:,:,-2)
-                a(:,:,-3) = a_int(:,:,2)
-                a(:,:,-2) = a(:,:,-1)
-                a(:,:,-1) = a_int(:,:,1)
+                a(:,z,-4) = a(:,z,-2)
+                a(:,z,-3) = a_int(:,z,2)
+                a(:,z,-2) = a(:,z,-1)
+                a(:,z,-1) = a_int(:,z,1)
 
-                v(:,:,-4) = v(:,:,-2)
-                v(:,:,-3) = v_int(:,:,2)
-                v(:,:,-2) = v(:,:,-1)
-                v(:,:,-1) = v_int(:,:,1)
+                v(:,z,-4) = v(:,z,-2)
+                v(:,z,-3) = v_int(:,z,2)
+                v(:,z,-2) = v(:,z,-1)
+                v(:,z,-1) = v_int(:,z,1)
 
 
             END IF
