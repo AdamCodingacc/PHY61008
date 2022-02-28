@@ -6,7 +6,7 @@ PROGRAM solar_sim
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
     DOUBLEPRECISION :: r(1:3, 1:7, 0:2), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:2), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7), rtemp(1:3,1:7)
-    DOUBLEPRECISION, DIMENSION(1:7) :: M, GPE, dt, deltat
+    DOUBLEPRECISION, DIMENSION(1:7) :: M, GPE, dt, deltat, timetest
     DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot
     INTEGER :: n, i, j, k, z, stepno, counter(1:7) !Define indexing integers
     CHARACTER(LEN = 1) :: lg
@@ -48,6 +48,8 @@ counter = 0
 dt = 0
 deltat = 0
 rtemp = 0
+
+timetest = 0
 
 !Initialize starting positions
 r(:,1,0) = 0 !System centred around Sun
@@ -239,7 +241,7 @@ END DO
 
 !==================================================================================================================
 !Ensure that all bodies are done in the first iteration
-deltat = 0
+deltat(:) = 0
 dt = dtmin
 
 
@@ -248,11 +250,11 @@ DO
     deltat(:) = deltat(:) + dtmin
     DO z = 1,n
         !clear temporary interpolated values
-        rtemp = 0
+        rtemp(:,:) = 0
 
         !skip bodies when their individual timestep has not been reached
         IF (deltat(z) /= dt(z)) CYCLE
-
+        timetest(z) = timetest(z) + dt(z)
 
         !Predict position and velocity using ABM predictor
         r(:,z,1) = r(:,z,0) + ((dt(z)/24.) * (-9.*v(:,z,-3) + 37.*v(:,z,-2) - 59.*v(:,z,-1) + 55.*v(:,z,0)))
@@ -410,7 +412,8 @@ DO
     !WRITE(6,*) time
 
     !Second condition ensures bodies synched at end
-    IF ((time > (num_yr * 31536000.)) .AND. (MAXVAL(deltat) == 0)) EXIT
+    !IF ((time > (num_yr * 31536000.)) .AND. (MAXVAL(deltat) == dtmin)) EXIT
+    IF (time > (num_yr * 31536000.)) EXIT
 END DO
 
 !Shut all logging files
@@ -455,7 +458,9 @@ END DO
 
 WRITE(6,*) "Min timestep", dtmin
 DO i = 1,n
-    WRITE(6,*) dt(i)
+    WRITE(6,*) "dt", dt(i)
+    WRITE(6,*) "time", timetest(i)
+    WRITE(6,*) "deltat", deltat(i)
 END DO
 
 !Loop through each body to find GPE of each
