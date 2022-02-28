@@ -239,14 +239,16 @@ END DO
 
 !==================================================================================================================
 !Ensure that all bodies are done in the first iteration
-deltat(:) = dtmin
-dt(:) = dtmin
+deltat = 0
+dt = dtmin
 
-accdo = .TRUE.
+
 !ABM Method
 DO
+    deltat(:) = deltat(:) + dtmin
     DO z = 1,n
         !clear temporary interpolated values
+        rtemp = 0
 
         !skip bodies when their individual timestep has not been reached
         IF (deltat(z) /= dt(z)) CYCLE
@@ -314,11 +316,12 @@ DO
         v(:,z,0) = v(:,z,2)
         a(:,z,0) = a(:,z,2)
 
+        !WRITE(6,*) a(1,z,2), a(1,z,1)
 
         !Ensure enough data points are stored
         IF (counter(z) > 6) THEN
             !Check if error from predictor-corrector is small enough and timesteps synched
-            IF ((errcoeff * MAXVAL(ABS(r(:,z,2) - r(:,z,1)) / (ABS(r(:,z,2)) + Small)) < (RelErr * 0.01))&
+            IF ((errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01))&
             .AND. (MAXVAL(deltat) == dtmin)) THEN
                 WRITE(6,*) z, "doubled"
                 !Double timestep
@@ -329,11 +332,14 @@ DO
                     a(:,z,-k) = a(:,z,-2*k)
                     v(:,z,-k) = v(:,z,-2*k)
                 END DO
+                !Update minimum timestep
+                dtmin = MINVAL(dt)
             END IF
 
             !Check if error from predictor-corrector is too large
-            IF (errcoeff * MAXVAL(ABS(r(:,z,2) - r(:,z,1)) / (ABS(r(:,z,2)) + Small)) > RelErr) THEN
-                WRITE(6,*) "halved"
+            IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) > RelErr) THEN
+                WRITE(6,*) z, "halved"
+
                 !Halve timestep
                 dt(z) = dt(z) * 0.5
 
@@ -356,7 +362,8 @@ DO
                 v(:,z,-2) = v(:,z,-1)
                 v(:,z,-1) = v_int(:,z,1)
 
-
+                !Update minimum timestep
+                dtmin = MINVAL(dt)
             END IF
 
             !Reset counter to let old data fill up
@@ -370,18 +377,11 @@ DO
         !WRITE(6,*) stepno
     END DO
 
-    !Update minimum timestep if all synched
-    IF (MAXVAL(deltat) == 0) THEN
-        dtmin = MINVAL(dt)
-    END IF
-
-    deltat(:) = deltat(:) + dtmin
-
     !DO i = 1,n
-     !   WRITE(6,*) deltat(i)
-      !  WRITE(6,*) dt(i)
+     !   WRITE(6,*) i, "deltat", deltat(i)
+      !  WRITE(6,*) i, "dt", dt(i)
     !END DO
-    !WRITE(6,*) dtmin
+    !WRITE(6,*) "dtmin", dtmin
 
     !Write every 500th step to log files
     IF ((MOD(stepno, 500) == 0) .AND. (lg == 'y')) THEN
@@ -408,7 +408,9 @@ DO
 
 
     !WRITE(6,*) time
-    IF (time > (num_yr * 31536000.)) EXIT
+
+    !Second condition ensures bodies synched at end
+    IF ((time > (num_yr * 31536000.)) .AND. (MAXVAL(deltat) == 0)) EXIT
 END DO
 
 !Shut all logging files
@@ -422,6 +424,7 @@ IF (lg == 'y') THEN
     CLOSE(10)
 END IF
 
+WRITE(6,*) "Final time (s)", time
 
 WRITE(6,*) ""
 WRITE(6,*) "Final Conditions"
