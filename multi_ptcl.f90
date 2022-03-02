@@ -258,6 +258,9 @@ DO
         IF (deltat(z) /= dt(z)) CYCLE
         timetest(z) = timetest(z) + dt(z)
 
+        !update that timestep has been reached
+        !deltat(z) = 0
+
         !Predict position and velocity using ABM predictor
         r(:,z,1) = r(:,z,0) + ((dt(z)/24.) * (-9.*v(:,z,-3) + 37.*v(:,z,-2) - 59.*v(:,z,-1) + 55.*v(:,z,0)))
         v(:,z,1) = v(:,z,0) + ((dt(z)/24.) * (-9.*a(:,z,-3) + 37.*a(:,z,-2) - 59.*a(:,z,-1) + 55.*a(:,z,0)))
@@ -311,7 +314,7 @@ DO
         END DO
 
         !Shift previous values down arrays
-        DO i = -6,0
+        DO i = -6,-1
             a(:,z,i) = a(:,z,i+1)
             v(:,z,i) = v(:,z,i+1)
         END DO
@@ -326,8 +329,9 @@ DO
         !Ensure enough data points are stored
         IF (counter(z) > 6) THEN
             !Check if error from predictor-corrector is small enough and timesteps synched
-            IF ((errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01))&
-            .AND. (MAXVAL(deltat) == dtmin)) THEN
+            IF ((errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01))) THEN
+            !.AND. (MAXVAL(deltat) == dtmin)) THEN
+
                 WRITE(6,*) z, "doubled"
                 !Double timestep
                 dt(z) = dt(z) * 2.
@@ -338,7 +342,7 @@ DO
                     v(:,z,-k) = v(:,z,-2*k)
                 END DO
                 !Update minimum timestep
-                dtmin = MINVAL(dt)
+                !dtmin = MINVAL(dt)
             END IF
 
             !Check if error from predictor-corrector is too large
@@ -371,21 +375,28 @@ DO
                 dtmin = MINVAL(dt)
             END IF
 
+
             !Reset counter to let old data fill up
             counter(z) = 0
         END IF
 
-        counter(z) = counter(z) + 1
-
         !update that timestep has been reached
         deltat(z) = 0
+
+        counter(z) = counter(z) + 1
 
         !WRITE(6,*) stepno
     END DO
 
+    !Allows dtmin to double if all particles synced
+    !Forces running at original dtmin until all sync
+    IF (MAXVAL(deltat) == 0) THEN
+        dtmin = MINVAL(dt)
+    END IF
+
     !DO i = 1,n
      !   WRITE(6,*) i, "deltat", deltat(i)
-      !  WRITE(6,*) i, "dt", dt(i)
+    !    WRITE(6,*) i, "dt", dt(i)
     !END DO
     !WRITE(6,*) "dtmin", dtmin
 
@@ -410,7 +421,7 @@ DO
     !Update elapsed time
 
     stepno = stepno + 1
-    deltat(:) = deltat(:) + dtmin
+    deltat = deltat + dtmin
 
 
     !WRITE(6,*) time
