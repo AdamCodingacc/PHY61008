@@ -241,21 +241,29 @@ END DO
 
 !==================================================================================================================
 !Ensure that all bodies are done in the first iteration
-!deltat(:) = 0
 dt(:) = dtmin
-deltat = dtmin
+deltat = 0
 
 !ABM Method
 DO
     time = time + dtmin
-    !deltat(:) = deltat(:) + dtmin
+    deltat(:) = deltat(:) + dtmin
+
+    !DO z = 1,n
+    !    IF (deltat(z) == dt(z)) THEN
+    !        accdo(z) = .TRUE.
+    !    END IF
+    !END DO
+
     DO z = 1,n
+        !skip bodies when their individual timestep has not been reached
+        IF (deltat(z) /= dt(z)) CYCLE
+        !IF (accdo(z) .EQV. .FALSE.) CYCLE
+
         !clear temporary interpolated values
         rtemp(:,:) = 0
         s_sq = 0
 
-        !skip bodies when their individual timestep has not been reached
-        IF (deltat(z) /= dt(z)) CYCLE
         timetest(z) = timetest(z) + dt(z)
 
         !update that timestep has been reached
@@ -279,16 +287,16 @@ DO
         a(:,z,1) = 0
 
         !Calculate acceleration for predicted position
-        DO i = 1,n
+        !DO i = 1,n
             DO j = 1,n
-            IF (i == j) CYCLE
+            IF (z == j) CYCLE
                 !calculate square of absolute distance
-                s_sq(i,j) = ((rtemp(1,j) - rtemp(1,i))**2 + (rtemp(2,j) - rtemp(2,i))**2 + (rtemp(3,j) - rtemp(3,i))**2)
+                s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
 
                 !Calculate new acceleration
-                a(:,z,1) = a(:,z,1) + G * M(j) * (rtemp(:,j) - rtemp(:,i))*(s_sq(i,j)**-1.5)
+                a(:,z,1) = a(:,z,1) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
             END DO
-        END DO
+        !END DO
 
 
 
@@ -301,17 +309,16 @@ DO
 
         !Recalculate acceleration for corrected position
         a(:,z,2) = 0
-        s_sq = 0
 
-        DO i = 1,n
+        !DO i = 1,n
             DO j = 1,n
-            IF (i == j) CYCLE
-                s_sq(i,j) = ((rtemp(1,j) - rtemp(1,i))**2 + (rtemp(2,j) - rtemp(2,i))**2 + (rtemp(3,j) - rtemp(3,i))**2)
+            IF (z == j) CYCLE
+                s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
 
                 !Calculate corrected acceleration
-                a(:,z,2) = a(:,z,2) + G * M(j) * (rtemp(:,j) - rtemp(:,i))*(s_sq(i,j)**-1.5)
+                a(:,z,2) = a(:,z,2) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
             END DO
-        END DO
+        !END DO
 
         !Shift previous values down arrays
         DO i = -6,-1
@@ -324,12 +331,12 @@ DO
         v(:,z,0) = v(:,z,2)
         a(:,z,0) = a(:,z,2)
 
-        !WRITE(6,*) a(1,z,2), a(1,z,1)
+        WRITE(6,*) a(1,z,2), a(1,z,1)
 
         !Ensure enough data points are stored
         IF (counter(z) > 6) THEN
             !Check if error from predictor-corrector is small enough and timesteps synched
-            IF ((errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01))) THEN
+            IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01)) THEN
             !.AND. (MAXVAL(deltat) == dtmin)) THEN
 
                 WRITE(6,*) z, "doubled"
@@ -342,7 +349,7 @@ DO
                     v(:,z,-k) = v(:,z,-2*k)
                 END DO
                 !Update minimum timestep
-                !dtmin = MINVAL(dt)
+                dtmin = MINVAL(dt)
             END IF
 
             !Check if error from predictor-corrector is too large
@@ -375,7 +382,6 @@ DO
                 dtmin = MINVAL(dt)
             END IF
 
-
             !Reset counter to let old data fill up
             counter(z) = 0
         END IF
@@ -387,12 +393,6 @@ DO
 
         !WRITE(6,*) stepno
     END DO
-
-    !Allows dtmin to double if all particles synced
-    !Forces running at original dtmin until all sync
-    IF (MAXVAL(deltat) == 0) THEN
-        dtmin = MINVAL(dt)
-    END IF
 
     !DO i = 1,n
      !   WRITE(6,*) i, "deltat", deltat(i)
@@ -421,9 +421,8 @@ DO
     !Update elapsed time
 
     stepno = stepno + 1
-    deltat = deltat + dtmin
 
-
+    !deltat = deltat + dtmin
     !WRITE(6,*) time
 
     !Second condition ensures bodies synched at end
