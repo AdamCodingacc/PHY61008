@@ -241,16 +241,18 @@ END DO
 
 !==================================================================================================================
 !Ensure that all bodies are done in the first iteration
-deltat(:) = 0
-dt = dtmin
-
+!deltat(:) = 0
+dt(:) = dtmin
+deltat = dtmin
 
 !ABM Method
 DO
-    deltat(:) = deltat(:) + dtmin
+    time = time + dtmin
+    !deltat(:) = deltat(:) + dtmin
     DO z = 1,n
         !clear temporary interpolated values
         rtemp(:,:) = 0
+        s_sq = 0
 
         !skip bodies when their individual timestep has not been reached
         IF (deltat(z) /= dt(z)) CYCLE
@@ -269,7 +271,6 @@ DO
 
         !Use predicted position for body acceleration is being calculated for
         rtemp(:,z) = r(:,z,1)
-
 
         !Clear predicted acceleration to not factor into calculation
         a(:,z,1) = 0
@@ -297,6 +298,8 @@ DO
 
         !Recalculate acceleration for corrected position
         a(:,z,2) = 0
+        s_sq = 0
+
         DO i = 1,n
             DO j = 1,n
             IF (i == j) CYCLE
@@ -376,6 +379,7 @@ DO
 
         !update that timestep has been reached
         deltat(z) = 0
+
         !WRITE(6,*) stepno
     END DO
 
@@ -404,9 +408,9 @@ DO
     END IF
 
     !Update elapsed time
-    time = time + dtmin
-    stepno = stepno + 1
 
+    stepno = stepno + 1
+    deltat(:) = deltat(:) + dtmin
 
 
     !WRITE(6,*) time
@@ -500,4 +504,19 @@ WRITE(6,*) "Absolute distance from the Sun (AU)"
 DO k = 1,7
     WRITE(6,*) sqrt(s_sq(1,k)) /AU
 END DO
+
+
+
+KE = 0
+pot = 0
+DO i = 1,n
+    KE = KE + 0.5*M(i)*absv_sq(i)
+    pot = pot + GPE(i)
+END DO
+
+WRITE(6,*) "Energies"
+WRITE(6,*) "ratio", KE / pot
+WRITE(6,*) "KE", KE
+WRITE(6,*) "GPE", pot
+
 END PROGRAM solar_sim
