@@ -331,7 +331,7 @@ DO
         v(:,z,0) = v(:,z,2)
         a(:,z,0) = a(:,z,2)
 
-        WRITE(6,*) a(1,z,2), a(1,z,1)
+        !WRITE(6,*) a(1,z,2), a(1,z,1)
 
         !Ensure enough data points are stored
         IF (counter(z) > 6) THEN
@@ -349,7 +349,7 @@ DO
                     v(:,z,-k) = v(:,z,-2*k)
                 END DO
                 !Update minimum timestep
-                dtmin = MINVAL(dt)
+                !dtmin = MINVAL(dt)
             END IF
 
             !Check if error from predictor-corrector is too large
@@ -393,6 +393,10 @@ DO
 
         !WRITE(6,*) stepno
     END DO
+
+    IF (MAXVAL(deltat) == 0) then
+        dtmin = MINVAL(dt)
+    END IF
 
     !DO i = 1,n
      !   WRITE(6,*) i, "deltat", deltat(i)
