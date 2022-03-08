@@ -242,32 +242,25 @@ END DO
 !==================================================================================================================
 !Ensure that all bodies are done in the first iteration
 dt(:) = dtmin
-deltat = 0
+deltat(:) = 0
 
 !ABM Method
 DO
     time = time + dtmin
     deltat(:) = deltat(:) + dtmin
 
-    !DO z = 1,n
-    !    IF (deltat(z) == dt(z)) THEN
-    !        accdo(z) = .TRUE.
-    !    END IF
-    !END DO
-
     DO z = 1,n
         !skip bodies when their individual timestep has not been reached
         IF (deltat(z) /= dt(z)) CYCLE
-        !IF (accdo(z) .EQV. .FALSE.) CYCLE
+
+        !Update counter for body
+        counter(z) = counter(z) + 1
 
         !clear temporary interpolated values
         rtemp(:,:) = 0
-        s_sq = 0
+        s_sq(:,:) = 0
 
         timetest(z) = timetest(z) + dt(z)
-
-        !update that timestep has been reached
-        !deltat(z) = 0
 
         !Predict position and velocity using ABM predictor
         r(:,z,1) = r(:,z,0) + ((dt(z)/24.) * (-9.*v(:,z,-3) + 37.*v(:,z,-2) - 59.*v(:,z,-1) + 55.*v(:,z,0)))
@@ -287,18 +280,14 @@ DO
         a(:,z,1) = 0
 
         !Calculate acceleration for predicted position
-        !DO i = 1,n
-            DO j = 1,n
+        DO j = 1,n
             IF (z == j) CYCLE
-                !calculate square of absolute distance
-                s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
+            !calculate square of absolute distance
+            s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
 
-                !Calculate new acceleration
-                a(:,z,1) = a(:,z,1) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
-            END DO
-        !END DO
-
-
+            !Calculate new acceleration
+            a(:,z,1) = a(:,z,1) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
+        END DO
 
         !ABM corrector
         r(:,z,2) = r(:,z,0) + ((dt(z)/24) * (v(:,z,-2) - 5.*v(:,z,-1) + 19.*v(:,z,0) + 9.*v(:,z,1)))
@@ -309,16 +298,13 @@ DO
 
         !Recalculate acceleration for corrected position
         a(:,z,2) = 0
-
-        !DO i = 1,n
-            DO j = 1,n
+        DO j = 1,n
             IF (z == j) CYCLE
-                s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
+            s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
 
-                !Calculate corrected acceleration
-                a(:,z,2) = a(:,z,2) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
-            END DO
-        !END DO
+            !Calculate corrected acceleration
+            a(:,z,2) = a(:,z,2) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
+        END DO
 
         !Shift previous values down arrays
         DO i = -6,-1
@@ -331,15 +317,13 @@ DO
         v(:,z,0) = v(:,z,2)
         a(:,z,0) = a(:,z,2)
 
-        !WRITE(6,*) a(1,z,2), a(1,z,1)
 
         !Ensure enough data points are stored
-        IF (counter(z) > 8) THEN
+        IF (counter(z) > 6) THEN
             !Check if error from predictor-corrector is small enough and timesteps synched
             IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01)) THEN
-            !.AND. (MAXVAL(deltat) == dtmin)) THEN
 
-                WRITE(6,*) z, "doubled"
+                !WRITE(6,*) z, "doubled"
                 !Double timestep
                 dt(z) = dt(z) * 2.
 
@@ -349,13 +333,11 @@ DO
                     v(:,z,-k) = v(:,z,-2*k)
                 END DO
 
-                !Update minimum timestep
-                !dtmin = MINVAL(dt)
             END IF
 
             !Check if error from predictor-corrector is too large
             IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) > RelErr) THEN
-                WRITE(6,*) z, "halved"
+                !WRITE(6,*) z, "halved"
 
                 !Halve timestep
                 dt(z) = dt(z) * 0.5
@@ -379,20 +361,23 @@ DO
                 v(:,z,-2) = v(:,z,-1)
                 v(:,z,-1) = v_int(:,z,1)
 
-                !Update minimum timestep
-                dtmin = MINVAL(dt)
             END IF
 
             !Reset counter to let old data fill up
             counter(z) = 0
         END IF
-
         !update that timestep has been reached
         deltat(z) = 0
-
-        counter(z) = counter(z) + 1
-
     END DO
+
+    IF (MINVAL(dt) > dtmin) THEN
+        IF (MAXVAL(deltat) == 0) then
+            dtmin = MINVAL(dt)
+        END IF
+    ELSEIF (MINVAL(dt)<dtmin) then
+        dtmin = MINVAL(dt)
+    END IF
+
     DO z = 1,n
         IF (dt(z) < deltat(z)) THEN
             WRITE(6,*) "dtmin", dtmin
@@ -401,15 +386,9 @@ DO
             WRITE(6,*) "z", z
             WRITE(6,*) "counter", counter(z)
             WRITE(6,*) "time", time
+            dtmin = dtmin * 0.5
         END IF
     END DO
-
-
-    !DO i = 1,n
-     !   WRITE(6,*) i, "deltat", deltat(i)
-    !    WRITE(6,*) i, "dt", dt(i)
-    !END DO
-    !WRITE(6,*) "dtmin", dtmin
 
     !Write every 500th step to log files
     IF ((MOD(stepno, 500) == 0) .AND. (lg == 'y')) THEN
@@ -433,12 +412,9 @@ DO
 
     stepno = stepno + 1
 
-    !deltat = deltat + dtmin
-    !WRITE(6,*) time
-
     !Second condition ensures bodies synched at end
-    !IF ((time > (num_yr * 31536000.)) .AND. (MAXVAL(deltat) == dtmin)) EXIT
-    IF (time > (num_yr * 31536000.)) EXIT
+    IF ((time > (num_yr * 31536000.)) .AND. (MAXVAL(deltat) == 0)) EXIT
+    !IF (time > (num_yr * 31536000.)) EXIT
 END DO
 
 !Shut all logging files
