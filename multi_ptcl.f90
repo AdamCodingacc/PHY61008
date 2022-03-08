@@ -334,7 +334,7 @@ DO
         !WRITE(6,*) a(1,z,2), a(1,z,1)
 
         !Ensure enough data points are stored
-        IF (counter(z) > 6) THEN
+        IF (counter(z) > 8) THEN
             !Check if error from predictor-corrector is small enough and timesteps synched
             IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01)) THEN
             !.AND. (MAXVAL(deltat) == dtmin)) THEN
@@ -348,6 +348,7 @@ DO
                     a(:,z,-k) = a(:,z,-2*k)
                     v(:,z,-k) = v(:,z,-2*k)
                 END DO
+
                 !Update minimum timestep
                 !dtmin = MINVAL(dt)
             END IF
@@ -391,12 +392,18 @@ DO
 
         counter(z) = counter(z) + 1
 
-        !WRITE(6,*) stepno
+    END DO
+    DO z = 1,n
+        IF (dt(z) < deltat(z)) THEN
+            WRITE(6,*) "dtmin", dtmin
+            WRITE(6,*) "deltat", deltat(z)
+            WRITE(6,*) "dt", dt(z)
+            WRITE(6,*) "z", z
+            WRITE(6,*) "counter", counter(z)
+            WRITE(6,*) "time", time
+        END IF
     END DO
 
-    IF (MAXVAL(deltat) == 0) then
-        dtmin = MINVAL(dt)
-    END IF
 
     !DO i = 1,n
      !   WRITE(6,*) i, "deltat", deltat(i)
