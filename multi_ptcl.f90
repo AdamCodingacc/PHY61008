@@ -17,7 +17,7 @@ G = 6.67e-11
 n = 7
 dtmin = 1.
 AU = 1.496e11
-RelErr = 5.e-13
+RelErr = 5.e-11
 Small = 1.e-7
 errcoeff = 19./270. !Saves doing the calculation every loop
 
@@ -378,17 +378,17 @@ DO
         dtmin = MINVAL(dt)
     END IF
 
-    DO z = 1,n
-        IF (dt(z) < deltat(z)) THEN
-            WRITE(6,*) "dtmin", dtmin
-            WRITE(6,*) "deltat", deltat(z)
-            WRITE(6,*) "dt", dt(z)
-            WRITE(6,*) "z", z
-            WRITE(6,*) "counter", counter(z)
-            WRITE(6,*) "time", time
-            dtmin = dtmin * 0.5
-        END IF
-    END DO
+    !DO z = 1,n
+    !    IF (dt(z) < deltat(z)) THEN
+    !        WRITE(6,*) "dtmin", dtmin
+    !        WRITE(6,*) "deltat", deltat(z)
+    !        WRITE(6,*) "dt", dt(z)
+    !        WRITE(6,*) "z", z
+    !        WRITE(6,*) "counter", counter(z)
+    !        WRITE(6,*) "time", time
+    !        dtmin = dtmin * 0.5
+    !    END IF
+    !END DO
 
     !Write every 500th step to log files
     IF ((MOD(stepno, 500) == 0) .AND. (lg == 'y')) THEN
@@ -414,6 +414,7 @@ DO
 
     !Second condition ensures bodies synched at end
     IF ((time > (num_yr * 31536000.)) .AND. (MAXVAL(deltat) == 0)) EXIT
+    !WRITE(6,*) time
     !IF (time > (num_yr * 31536000.)) EXIT
 END DO
 
