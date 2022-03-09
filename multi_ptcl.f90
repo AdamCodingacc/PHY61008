@@ -8,7 +8,7 @@ PROGRAM solar_sim
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7), rtemp(1:3,1:7)
     DOUBLEPRECISION, DIMENSION(1:7) :: M, GPE, dt, deltat, timetest
     DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot
-    INTEGER :: n, i, j, k, z, stepno, counter(1:7), doub !Define indexing integers
+    INTEGER :: n, i, j, k, z, stepno, counter(1:7) !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
 !Initialize variables
@@ -370,35 +370,15 @@ DO
     END DO
 
     IF (MINVAL(dt) > dtmin) THEN
-        doub = 1
-        DO i = 1,n
-            IF (MOD(deltat(i),MINVAL(dt)) /= 0) then
-                doub = 0
-            END IF
-        END DO
-        IF (doub == 1) THEN
+        IF (ALL(MOD(deltat,MINVAL(dt)) .EQ. 0)) then
             dtmin = MINVAL(dt)
         END IF
-
-
         !IF (MAXVAL(deltat) == 0) then
          !   dtmin = MINVAL(dt)
         !END IF
     ELSEIF (MINVAL(dt)<dtmin) then
         dtmin = MINVAL(dt)
     END IF
-
-    !DO z = 1,n
-    !    IF (dt(z) < deltat(z)) THEN
-    !        WRITE(6,*) "dtmin", dtmin
-    !        WRITE(6,*) "deltat", deltat(z)
-    !        WRITE(6,*) "dt", dt(z)
-    !        WRITE(6,*) "z", z
-    !        WRITE(6,*) "counter", counter(z)
-    !        WRITE(6,*) "time", time
-    !        dtmin = dtmin * 0.5
-    !    END IF
-    !END DO
 
     !Write every 500th step to log files
     IF ((MOD(stepno, 500) == 0) .AND. (lg == 'y')) THEN
