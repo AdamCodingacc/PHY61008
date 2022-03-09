@@ -7,18 +7,42 @@ PROGRAM solar_sim
     DOUBLEPRECISION :: r(1:3, 1:7, 0:2), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:2), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7), rtemp(1:3,1:7)
     DOUBLEPRECISION, DIMENSION(1:7) :: M, GPE, dt, deltat, timetest
-    DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot
+    DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot, msun
+    DOUBLEPRECISION :: year, munit, runit, tunit, vunit, pcu
     INTEGER :: n, i, j, k, z, stepno, counter(1:7) !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
 !Initialize variables
-G = 6.67e-11
 n = 7
-dtmin = 1.
-AU = 1.496e11
-RelErr = 5.e-13
-Small = 1.e-7
+dtmin = 1.e-10
+RelErr = 5.e-5
+Small = 1.e-4
 errcoeff = 19./270. !Saves doing the calculation every loop
+! nbody units
+! constants
+   G=6.67d-8                 ! G in cgs
+   pcu=3.086d18              ! pc in cm
+   msun=1.99d33              ! solar mass in g
+   year=60.*60.*24.*365.25     ! year in s
+   AU=1.50d13                ! au in cm
+!
+   munit=1.
+   runit=1.
+!
+! set units:
+!    masses in msun
+!    distances in pc
+! gives:
+!    vunit in km/s
+!    time in yrs
+!
+! time in yr
+   tunit=SQRT((runit*pcu**3)/(G*munit*msun))/year
+! velocity in km/s
+   vunit=runit*pcu/(tunit*year*1.d5)
+   write(6,*) 'tunit/yrs', tunit
+   write(6,*) 'vunit/km/s', vunit
+
 
 !Masses in kg
 M(1) = 1.99e30
@@ -28,6 +52,9 @@ M(4) = 1.898e27
 M(5) = 5.683e26
 M(6) = 8.681e25
 M(7) = 1.024e26
+
+M = M * 1000 !convert to g
+M = M / msun !convert to solar units
 
 !Empty array variables
 num_yr = 0
@@ -71,6 +98,8 @@ r(1,7,0) = 30.07 * AU * sin(1.) * -1.
 r(2,7,0) = 30.07 * AU * cos(1.)
 r(3,7,0) = 0
 
+r = r / pcu !convert to parsecs
+
 !Initialize starting velocities
 !Negative ensures planets begin orbit counter-clockwise
 v(:,1,0) = 0
@@ -92,6 +121,9 @@ v(3,6,0) = 0
 v(1,7,0) = 5430. * -1. * cos(1.)
 v(2,7,0) = 5430. * -1. * sin(1.)
 v(3,7,0) = 0
+
+v = v / 1000
+v = v / vunit !convert to vunits
 
 !Find centre of mass and velocity
 DO i = 1, n
@@ -123,11 +155,11 @@ DO i = 1,n
                 s_sq(i,j) = ((r(1,j,0) - r(1,i,0))**2 + (r(2,j,0) - r(2,i,0))**2 + (r(3,j,0) - r(3,i,0))**2)
 
                 !GPE subtracted thus negative value
-                GPE(i) = GPE(i) - G*M(i)*M(j)/sqrt(s_sq(i,j))
+                GPE(i) = GPE(i) - M(i)*M(j)/sqrt(s_sq(i,j))
 
 
                 !Need + so each object does not overwrite previous
-                a(:,i,0) = a(:,i,0) + (G * M(j) * (r(:,j,0) - r(:,i,0)) * (s_sq(i,j)**-1.5))
+                a(:,i,0) = a(:,i,0) + (M(j) * (r(:,j,0) - r(:,i,0)) * (s_sq(i,j)**-1.5))
 
             END DO
         END DO
@@ -152,7 +184,7 @@ WRITE(6,*) "Position Vectors xyz (AU)"
 WRITE(6,*) ""
 !Print initial coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) (r(:,i,0)/AU)
+    WRITE(6,*) (r(:,i,0)/AU) * pcu
 END DO
 
 WRITE(6,*) ""
@@ -160,7 +192,7 @@ WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 !Print initial velocity of all bodies in each direction
 DO i = 1,n
-    WRITE(6,*) v(:,i,0)
+    WRITE(6,*) v(:,i,0) * vunit
 END DO
 
 WRITE(6,*) ""
@@ -225,7 +257,7 @@ DO k = 0,5
 
 
             !Find acceleration on object i in each dimension
-            a(:,i,0) = a(:,i,0) + G * M(j) * (r(:,j,0) - r(:,i,0))*(s_sq(i,j)**-1.5)
+            a(:,i,0) = a(:,i,0) + M(j) * (r(:,j,0) - r(:,i,0))*(s_sq(i,j)**-1.5)
 
 
         END DO
@@ -285,7 +317,7 @@ DO
             s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
 
             !Calculate new acceleration
-            a(:,z,1) = a(:,z,1) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
+            a(:,z,1) = a(:,z,1) + M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
         END DO
 
         !ABM corrector
@@ -302,7 +334,7 @@ DO
             s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
 
             !Calculate corrected acceleration
-            a(:,z,2) = a(:,z,2) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
+            a(:,z,2) = a(:,z,2) + M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
         END DO
 
         !Shift previous values down arrays
@@ -322,7 +354,6 @@ DO
             !Check if error from predictor-corrector is small enough and timesteps synched
             IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01)) THEN
 
-                !WRITE(6,*) z, "doubled"
                 !Double timestep
                 dt(z) = dt(z) * 2.
 
@@ -336,7 +367,6 @@ DO
 
             !Check if error from predictor-corrector is too large
             IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) > RelErr) THEN
-                !WRITE(6,*) z, "halved"
 
                 !Halve timestep
                 dt(z) = dt(z) * 0.5
@@ -373,9 +403,6 @@ DO
         IF (ALL(MOD(deltat,MINVAL(dt)) .EQ. 0)) then
             dtmin = MINVAL(dt)
         END IF
-        !IF (MAXVAL(deltat) == 0) then
-         !   dtmin = MINVAL(dt)
-        !END IF
     ELSEIF (MINVAL(dt)<dtmin) then
         dtmin = MINVAL(dt)
     END IF
@@ -402,10 +429,10 @@ DO
 
     stepno = stepno + 1
 
+    !WRITE(6,*) time * tunit
+
     !Second condition ensures bodies synched at end
-    IF ((time > (num_yr * 31536000.)) .AND. (MAXVAL(deltat) == 0)) EXIT
-    !WRITE(6,*) time
-    !IF (time > (num_yr * 31536000.)) EXIT
+    IF (((time * tunit) > (num_yr * year)) .AND. (MAXVAL(deltat) == 0)) EXIT
 END DO
 
 !Shut all logging files
@@ -427,7 +454,7 @@ WRITE(6,*) "Position Vectors xyz (AU)"
 WRITE(6,*) ""
 !Print final coordinates of all bodies
 DO i = 1,n
-    WRITE(6,*) (r(:,i,0)/AU)
+    WRITE(6,*) (r(:,i,0)/AU) * pcu
 END DO
 
 WRITE(6,*) ""
@@ -435,7 +462,7 @@ WRITE(6,*) "Velocity xyz (ms^-1)"
 WRITE(6,*) ""
 DO i = 1,n
     DO k = -3,1
-        WRITE(6,*) v(:,i,k)
+        WRITE(6,*) v(:,i,k) * vunit
     END DO
 END DO
 
@@ -450,9 +477,9 @@ END DO
 
 WRITE(6,*) "Min timestep", dtmin
 DO i = 1,n
-    WRITE(6,*) "dt", dt(i)
-    WRITE(6,*) "time", timetest(i)
-    WRITE(6,*) "deltat", deltat(i)
+    WRITE(6,*) "dt", dt(i) * tunit
+    WRITE(6,*) "time", timetest(i) * tunit
+    WRITE(6,*) "deltat", deltat(i) * tunit
 END DO
 
 !Loop through each body to find GPE of each
@@ -465,7 +492,7 @@ DO i = 1,n
                 s_sq(i,j) = ((r(1,j,0) - r(1,i,0))**2 + (r(2,j,0) - r(2,i,0))**2 + (r(3,j,0) - r(3,i,0))**2)
 
                 !Sum calculated GPE
-                GPE(i) = GPE(i) - G*M(i)*M(j)/sqrt(s_sq(i,j))
+                GPE(i) = GPE(i) - M(i)*M(j)/sqrt(s_sq(i,j))
         END DO
 
         !Sum kinetic energy in each dimension (k)
@@ -490,9 +517,8 @@ WRITE(6,*) (E_1/E_0) * 100
 
 WRITE(6,*) "Absolute distance from the Sun (AU)"
 DO k = 1,7
-    WRITE(6,*) sqrt(s_sq(1,k)) /AU
+    WRITE(6,*) sqrt(s_sq(1,k)) /AU * pcu
 END DO
-
 
 
 KE = 0
