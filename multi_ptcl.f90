@@ -17,7 +17,7 @@ G = 6.67e-11
 n = 7
 dtmin = 1.
 AU = 1.496e11
-RelErr = 5.e-11
+RelErr = 5.e-15
 Small = 1.e-7
 errcoeff = 19./270. !Saves doing the calculation every loop
 
