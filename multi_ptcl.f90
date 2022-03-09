@@ -8,9 +8,8 @@ PROGRAM solar_sim
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7), rtemp(1:3,1:7)
     DOUBLEPRECISION, DIMENSION(1:7) :: M, GPE, dt, deltat, timetest
     DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot
-    INTEGER :: n, i, j, k, z, stepno, counter(1:7) !Define indexing integers
+    INTEGER :: n, i, j, k, z, stepno, counter(1:7), doub !Define indexing integers
     CHARACTER(LEN = 1) :: lg
-    LOGICAL, DIMENSION(1:7) :: accdo
 
 !Initialize variables
 G = 6.67e-11
@@ -371,9 +370,20 @@ DO
     END DO
 
     IF (MINVAL(dt) > dtmin) THEN
-        IF (MAXVAL(deltat) == 0) then
+        doub = 1
+        DO i = 1,n
+            IF (MOD(deltat(i),MINVAL(dt)) /= 0) then
+                doub = 0
+            END IF
+        END DO
+        IF (doub == 1) THEN
             dtmin = MINVAL(dt)
         END IF
+
+
+        !IF (MAXVAL(deltat) == 0) then
+         !   dtmin = MINVAL(dt)
+        !END IF
     ELSEIF (MINVAL(dt)<dtmin) then
         dtmin = MINVAL(dt)
     END IF
