@@ -7,7 +7,7 @@ PROGRAM solar_sim
     DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:,:) :: s_sq, rtemp
     DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:) :: absv_sq, M, GPE, dt, deltat, counter
     DOUBLEPRECISION :: COM(1:3), COV(1:3)
-    DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot, exittime
+    DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot, exittime
     INTEGER :: n, i, j, k, z, stepno !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
@@ -199,8 +199,6 @@ IF (lg == 'y') THEN
     OPEN(10,file = 'Neptune_Motion.csv')
 END IF
 
-!Open file to log energy error for error testing
-OPEN(11, file = 'Energy_err.csv')
 
 !================================================================================================================
 
