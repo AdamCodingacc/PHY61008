@@ -3,17 +3,33 @@ PROGRAM solar_sim
 
     !Declare variables
     IMPLICIT NONE
-    !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
-    DOUBLEPRECISION :: r(1:3, 1:7, 0:2), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:2), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
-    DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7), rtemp(1:3,1:7)
-    DOUBLEPRECISION, DIMENSION(1:7) :: M, GPE, dt, deltat
+    DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:,:,:) :: r, v, a, a_int, v_int, dist
+    DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:,:) :: s_sq, rtemp
+    DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:) :: absv_sq, M, GPE, dt, deltat, counter
+    DOUBLEPRECISION :: COM(1:3), COV(1:3)
     DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot, exittime
-    INTEGER :: n, i, j, k, z, stepno, counter(1:7) !Define indexing integers
+    INTEGER :: n, i, j, k, z, stepno !Define indexing integers
     CHARACTER(LEN = 1) :: lg
+
+!Allocate array space for the number of bodies
+n = 7
+ALLOCATE(r(1:3, 1:n, 0:2))
+ALLOCATE(v(1:3, 1:n, -6:2))
+ALLOCATE(a(1:3, 1:n, -6:2))
+ALLOCATE(a_int(1:3, 1:n, 1:2))
+ALLOCATE(v_int(1:3, 1:n, 1:2))
+ALLOCATE(dist(1:3, 1:n, 1:n))
+ALLOCATE(s_sq(1:n, 1:n))
+ALLOCATE(rtemp(1:3, 1:n))
+ALLOCATE(absv_sq(1:n))
+ALLOCATE(M(1:n))
+ALLOCATE(GPE(1:n))
+ALLOCATE(dt(1:n))
+ALLOCATE(deltat(1:n))
+ALLOCATE(counter(1:n))
 
 !Initialize variables
 G = 6.67e-11
-n = 7
 dtmin = 1.
 AU = 1.496e11
 RelErr = 5.e-13
