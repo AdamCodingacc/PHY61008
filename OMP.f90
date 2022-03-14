@@ -277,6 +277,9 @@ DO
 
         !Clear predicted acceleration to not factor into calculation
         a(:,z,1) = 0
+
+        !$OMP PARALLEL
+        !$OMP DO PRIVATE(s_sq,j)
         !Calculate acceleration for predicted position
         DO j = 1,n
             IF (z == j) CYCLE
@@ -286,6 +289,8 @@ DO
             !Calculate new acceleration
             a(:,z,1) = a(:,z,1) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
         END DO
+        !$OMP END DO
+        !$OMP END PARALLEL
 
         !ABM corrector
         r(:,z,2) = r(:,z,0) + ((dt(z)/24) * (v(:,z,-2) - 5.*v(:,z,-1) + 19.*v(:,z,0) + 9.*v(:,z,1)))
@@ -296,6 +301,9 @@ DO
 
         !Recalculate acceleration for corrected position
         a(:,z,2) = 0
+
+        !$OMP PARALLEL
+        !$OMP DO PRIVATE(s_sq,j)
         DO j = 1,n
             IF (z == j) CYCLE
             s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
@@ -303,6 +311,10 @@ DO
             !Calculate corrected acceleration
             a(:,z,2) = a(:,z,2) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
         END DO
+
+        !$OMP END DO
+        !$OMP END PARALLEL
+
 
         !Shift previous values down arrays
         DO i = -6,-1
@@ -318,7 +330,7 @@ DO
 
         !Ensure enough data points are stored
         IF (counter(z) > 6) THEN
-            !Check if error from predictor-corrector is small enough
+            !Check if error from predictor-corrector is small enough and timesteps synched
             IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01)) THEN
 
                 !Double timestep
@@ -329,8 +341,8 @@ DO
                     a(:,z,-k) = a(:,z,-2*k)
                     v(:,z,-k) = v(:,z,-2*k)
                 END DO
-            END IF
 
+            END IF
 
             !Check if error from predictor-corrector is too large
             IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) > RelErr) THEN
@@ -365,6 +377,7 @@ DO
         !update that timestep has been reached
         deltat(z) = 0
     END DO
+
 
     IF (MINVAL(dt) > dtmin) THEN
         IF (ALL(MOD(deltat,MINVAL(dt)) .EQ. 0)) then
