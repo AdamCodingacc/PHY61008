@@ -6,8 +6,8 @@ PROGRAM solar_sim
     !x,y,z position, velocity, mass, initial acceln, new acceln for 7 bodies
     DOUBLEPRECISION :: r(1:3, 1:7, 0:2), v(1:3, 1:7, -6:2),  a(1:3, 1:7, -6:2), a_int(1:3, 1:7, 1:2), v_int(1:3, 1:7, 1:2)
     DOUBLEPRECISION :: COM(1:3), COV(1:3), s_sq(1:7, 1:7), s(1:7, 1:7), absv_sq(1:7), dist(1:3, 1:7, 1:7), rtemp(1:3,1:7)
-    DOUBLEPRECISION, DIMENSION(1:7) :: M, GPE, dt, deltat, timetest
-    DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot
+    DOUBLEPRECISION, DIMENSION(1:7) :: M, GPE, dt, deltat
+    DOUBLEPRECISION :: E_0, E_1, E_check, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot, exittime
     INTEGER :: n, i, j, k, z, stepno, counter(1:7) !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
@@ -48,7 +48,6 @@ dt = 0
 deltat = 0
 rtemp = 0
 
-timetest = 0
 
 !Initialize starting positions
 r(:,1,0) = 0 !System centred around Sun
@@ -156,22 +155,6 @@ DO i = 1,n
 END DO
 
 WRITE(6,*) ""
-WRITE(6,*) "Velocity xyz (ms^-1)"
-WRITE(6,*) ""
-!Print initial velocity of all bodies in each direction
-DO i = 1,n
-    WRITE(6,*) v(:,i,0)
-END DO
-
-WRITE(6,*) ""
-WRITE(6,*) "Acceleration xyz (ms^-2)"
-WRITE(6,*) ""
-DO i = 1,n
-    !Print initial acceleration of all bodies in each direction
-    WRITE(6,*) a(:,i,0)
-END DO
-
-WRITE(6,*) ""
 WRITE(6,*) "Initial Energy of System (J)"
 WRITE(6,*) ""
 !Total combined initial energy
@@ -185,6 +168,9 @@ WRITE(6,*) ""
 WRITE(6,*) "How many years would you like to simulate for?"
 READ *, num_yr !Store user input to calculate time to exit loop
 WRITE(6,*) ""
+
+!saves repeat calculation at end of ABM loop
+exittime = num_yr * 31536000.
 
 !Open Log Files to write data to if requested
 IF (lg == 'y') THEN
@@ -259,13 +245,12 @@ DO
         rtemp(:,:) = 0
         s_sq(:,:) = 0
 
-        timetest(z) = timetest(z) + dt(z)
 
         !Predict position and velocity using ABM predictor
         r(:,z,1) = r(:,z,0) + ((dt(z)/24.) * (-9.*v(:,z,-3) + 37.*v(:,z,-2) - 59.*v(:,z,-1) + 55.*v(:,z,0)))
         v(:,z,1) = v(:,z,0) + ((dt(z)/24.) * (-9.*a(:,z,-3) + 37.*a(:,z,-2) - 59.*a(:,z,-1) + 55.*a(:,z,0)))
 
-        DO i =1,n
+        DO i = 1,n
             !skip interpolation for body acceleration is being calculated for
             IF (i==z) CYCLE
             !interpolate position from most recently updated position
@@ -322,7 +307,6 @@ DO
             !Check if error from predictor-corrector is small enough and timesteps synched
             IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) < (RelErr * 0.01)) THEN
 
-                !WRITE(6,*) z, "doubled"
                 !Double timestep
                 dt(z) = dt(z) * 2.
 
@@ -336,7 +320,6 @@ DO
 
             !Check if error from predictor-corrector is too large
             IF (errcoeff * MAXVAL(ABS(a(:,z,2) - a(:,z,1)) / (ABS(a(:,z,2)) + Small)) > RelErr) THEN
-                !WRITE(6,*) z, "halved"
 
                 !Halve timestep
                 dt(z) = dt(z) * 0.5
@@ -373,29 +356,28 @@ DO
         IF (ALL(MOD(deltat,MINVAL(dt)) .EQ. 0)) then
             dtmin = MINVAL(dt)
         END IF
-        !IF (MAXVAL(deltat) == 0) then
-         !   dtmin = MINVAL(dt)
-        !END IF
     ELSEIF (MINVAL(dt)<dtmin) then
         dtmin = MINVAL(dt)
     END IF
 
     !Write every 500th step to log files
-    IF ((MOD(stepno, 500) == 0) .AND. (lg == 'y')) THEN
-        DO i = 1,n
-            DO j = 1,n
-                IF (i==j) CYCLE
-                !Calculate absolute distance in each direction for logging files
-                dist(:, i, j) = r(:,j,1) - r(:,i,1)
+    IF (MOD(stepno, 500) == 0) THEN
+        IF (lg == 'y') THEN
+            DO i = 1,n
+                DO j = 1,n
+                    IF (i==j) CYCLE
+                    !Calculate absolute distance in each direction for logging files
+                    dist(:, i, j) = r(:,j,1) - r(:,i,1)
+                END DO
             END DO
-        END DO
-        WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1)
-        WRITE(3,*) time, ',', dist(1,1,2), ',', dist(2,1,2), ',', dist(3,1,2)
-        WRITE(4,*) time, ',', dist(1,1,3), ',', dist(2,1,3), ',', dist(3,1,3)
-        WRITE(7,*) time, ',', dist(1,1,4), ',', dist(2,1,4), ',', dist(3,1,4)
-        WRITE(8,*) time, ',', dist(1,1,5), ',', dist(2,1,5), ',', dist(3,1,5)
-        WRITE(9,*) time, ',', dist(1,1,6), ',', dist(2,1,6), ',', dist(3,1,6)
-        WRITE(10,*) time, ',', dist(1,1,7), ',', dist(2,1,7), ',', dist(3,1,7)
+            WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1)
+            WRITE(3,*) time, ',', dist(1,1,2), ',', dist(2,1,2), ',', dist(3,1,2)
+            WRITE(4,*) time, ',', dist(1,1,3), ',', dist(2,1,3), ',', dist(3,1,3)
+            WRITE(7,*) time, ',', dist(1,1,4), ',', dist(2,1,4), ',', dist(3,1,4)
+            WRITE(8,*) time, ',', dist(1,1,5), ',', dist(2,1,5), ',', dist(3,1,5)
+            WRITE(9,*) time, ',', dist(1,1,6), ',', dist(2,1,6), ',', dist(3,1,6)
+            WRITE(10,*) time, ',', dist(1,1,7), ',', dist(2,1,7), ',', dist(3,1,7)
+        END IF
     END IF
 
     !Update elapsed time
@@ -403,9 +385,9 @@ DO
     stepno = stepno + 1
 
     !Second condition ensures bodies synched at end
-    IF ((time > (num_yr * 31536000.)) .AND. (MAXVAL(deltat) == 0)) EXIT
-    !WRITE(6,*) time
-    !IF (time > (num_yr * 31536000.)) EXIT
+    IF (time > exittime) THEN
+        IF (MAXVAL(deltat) == 0) EXIT
+    END IF
 END DO
 
 !Shut all logging files
@@ -419,7 +401,7 @@ IF (lg == 'y') THEN
     CLOSE(10)
 END IF
 
-WRITE(6,*) "Final time (s)", time
+WRITE(6,*) "Final time (yrs)", time / 31536000
 
 WRITE(6,*) ""
 WRITE(6,*) "Final Conditions"
@@ -431,28 +413,9 @@ DO i = 1,n
 END DO
 
 WRITE(6,*) ""
-WRITE(6,*) "Velocity xyz (ms^-1)"
-WRITE(6,*) ""
-DO i = 1,n
-    DO k = -3,1
-        WRITE(6,*) v(:,i,k)
-    END DO
-END DO
-
-WRITE(6,*) ""
-WRITE(6,*) "Acceleration xyz (ms^-2)"
-WRITE(6,*) ""
-DO i = 1,n
-    DO k = -3,1
-        WRITE(6,*) a(:,i,k)
-    END DO
-END DO
-
 WRITE(6,*) "Min timestep", dtmin
 DO i = 1,n
-    WRITE(6,*) "dt", dt(i)
-    WRITE(6,*) "time", timetest(i)
-    WRITE(6,*) "deltat", deltat(i)
+    WRITE(6,*) i, "dt", dt(i)
 END DO
 
 !Loop through each body to find GPE of each
@@ -493,8 +456,6 @@ DO k = 1,7
     WRITE(6,*) sqrt(s_sq(1,k)) /AU
 END DO
 
-
-
 KE = 0
 pot = 0
 DO i = 1,n
@@ -502,9 +463,7 @@ DO i = 1,n
     pot = pot + GPE(i)
 END DO
 
-WRITE(6,*) "Energies"
-WRITE(6,*) "ratio", KE / pot
-WRITE(6,*) "KE", KE
-WRITE(6,*) "GPE", pot
+WRITE(6,*) "Energy Ratio", KE / pot
+
 
 END PROGRAM solar_sim

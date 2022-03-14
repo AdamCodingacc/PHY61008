@@ -446,7 +446,7 @@ IF (lg == 'y') THEN
     CLOSE(10)
 END IF
 
-WRITE(6,*) "Final time (s)", time
+WRITE(6,*) "Final time (s)", time * tunit
 
 WRITE(6,*) ""
 WRITE(6,*) "Final Conditions"
