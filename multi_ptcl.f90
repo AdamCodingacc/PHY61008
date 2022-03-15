@@ -5,9 +5,9 @@ PROGRAM solar_sim
     IMPLICIT NONE
     DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:,:,:) :: r, v, a, a_int, v_int, dist
     DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:,:) :: s_sq, rtemp
-    DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:) :: absv_sq, M, GPE, dt, deltat, counter
+    DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:) :: absv_sq, M, GPE, dt, deltat, counter, phi
     DOUBLEPRECISION :: COM(1:3), COV(1:3)
-    DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot, exittime
+    DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot, exittime, pi
     INTEGER :: n, i, j, k, z, stepno !Define indexing integers
     CHARACTER(LEN = 1) :: lg
 
@@ -27,6 +27,7 @@ ALLOCATE(GPE(1:n))
 ALLOCATE(dt(1:n))
 ALLOCATE(deltat(1:n))
 ALLOCATE(counter(1:n))
+ALLOCATE(phi(1:n))
 
 !Initialize variables
 G = 6.67e-11
@@ -35,6 +36,12 @@ AU = 1.496e11
 RelErr = 5.e-13
 Small = 1.e-7
 errcoeff = 19./270. !Saves doing the calculation every loop
+pi = 3.14159
+
+!Initialize random angles
+Call init_random_seed()
+Call random_number(phi)
+phi = phi * 2* pi !angle in radians
 
 !Masses in kg
 M(1) = 1.99e30
@@ -67,45 +74,45 @@ rtemp = 0
 
 !Initialize starting positions
 r(:,1,0) = 0 !System centred around Sun
-r(1,2,0) = AU * sin(1.) * -1.
-r(2,2,0) = AU * cos(1.)
+r(1,2,0) = AU * sin(phi(1)) * -1.
+r(2,2,0) = AU * cos(phi(1))
 r(3,2,0) = 0
-r(1,3,0) = 1.52 * AU * sin(1.) * -1.
-r(2,3,0) = 1.52 * AU * cos(1.)
+r(1,3,0) = 1.52 * AU * sin(phi(2)) * -1.
+r(2,3,0) = 1.52 * AU * cos(phi(2))
 r(3,3,0) = 0
-r(1,4,0) = 5.2 * AU * sin(1.) * -1.
-r(2,4,0) = 5.2 * AU * cos(1.)
+r(1,4,0) = 5.2 * AU * sin(phi(3)) * -1.
+r(2,4,0) = 5.2 * AU * cos(phi(3))
 r(3,4,0) = 0
-r(1,5,0) = 9.583 * AU * sin(1.) * -1.
-r(2,5,0) = 9.583 * AU * cos(1.)
+r(1,5,0) = 9.583 * AU * sin(phi(4)) * -1.
+r(2,5,0) = 9.583 * AU * cos(phi(4))
 r(3,5,0) = 0
-r(1,6,0) = 19.201 * AU * sin(1.) * -1.
-r(2,6,0) = 19.201 * AU * cos(1.)
+r(1,6,0) = 19.201 * AU * sin(phi(5)) * -1.
+r(2,6,0) = 19.201 * AU * cos(phi(5))
 r(3,6,0) = 0
-r(1,7,0) = 30.07 * AU * sin(1.) * -1.
-r(2,7,0) = 30.07 * AU * cos(1.)
+r(1,7,0) = 30.07 * AU * sin(phi(6)) * -1.
+r(2,7,0) = 30.07 * AU * cos(phi(6))
 r(3,7,0) = 0
 
 !Initialize starting velocities
 !Negative ensures planets begin orbit counter-clockwise
 v(:,1,0) = 0
-v(1,2,0) = 29780. * -1. * cos(1.)
-v(2,2,0) = 29780. * -1. * sin(1.)
+v(1,2,0) = 29780. * -1. * cos(phi(1))
+v(2,2,0) = 29780. * -1. * sin(phi(1))
 v(3,2,0) = 0
-v(1,3,0) = 24070. * -1. * cos(1.)
-v(2,3,0) = 24070. * -1. * sin(1.)
+v(1,3,0) = 24070. * -1. * cos(phi(2))
+v(2,3,0) = 24070. * -1. * sin(phi(2))
 v(3,3,0) = 0
-v(1,4,0) = 13060. * -1. * cos(1.)
-v(2,4,0) = 13060. * -1. * sin(1.)
+v(1,4,0) = 13060. * -1. * cos(phi(3))
+v(2,4,0) = 13060. * -1. * sin(phi(3))
 v(3,4,0) = 0
-v(1,5,0) = 9680. * -1. * cos(1.)
-v(2,5,0) = 9680. * -1. * sin(1.)
+v(1,5,0) = 9680. * -1. * cos(phi(4))
+v(2,5,0) = 9680. * -1. * sin(phi(4))
 v(3,5,0) = 0
-v(1,6,0) = 6800. * -1. * cos(1.)
-v(2,6,0) = 6800. * -1. * sin(1.)
+v(1,6,0) = 6800. * -1. * cos(phi(5))
+v(2,6,0) = 6800. * -1. * sin(phi(5))
 v(3,6,0) = 0
-v(1,7,0) = 5430. * -1. * cos(1.)
-v(2,7,0) = 5430. * -1. * sin(1.)
+v(1,7,0) = 5430. * -1. * cos(phi(6))
+v(2,7,0) = 5430. * -1. * sin(phi(6))
 v(3,7,0) = 0
 
 !Find centre of mass and velocity
@@ -476,6 +483,28 @@ DO i = 1,n
 END DO
 
 WRITE(6,*) "Energy Ratio", KE / pot
+
+
+
+
+    !Subroutine to seed random number generation
+    !From https://gcc.gnu.org/onlinedocs/gcc-4.6.1/gfortran/RANDOM_005fSEED.html
+    Contains
+    subroutine init_random_seed()
+
+      INTEGER :: i, n, clock
+      INTEGER, DIMENSION(:), ALLOCATABLE :: seed
+
+      CALL RANDOM_SEED(size = n)
+      ALLOCATE(seed(n))
+
+      CALL SYSTEM_CLOCK(COUNT=clock)
+
+      seed = clock + 37 * (/ (i - 1, i = 1, n) /)
+      CALL RANDOM_SEED(PUT = seed)
+
+      DEALLOCATE(seed)
+    end
 
 
 END PROGRAM solar_sim
