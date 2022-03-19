@@ -67,45 +67,45 @@ rtemp = 0
 
 !Initialize starting positions
 r(:,1,0) = 0 !System centred around Sun
-r(1,2,0) = AU * sin(1.) * -1.
+r(1,2,0) = AU * sin(1.) * (-1.)
 r(2,2,0) = AU * cos(1.)
 r(3,2,0) = 0
-r(1,3,0) = 1.52 * AU * sin(1.) * -1.
+r(1,3,0) = 1.52 * AU * sin(1.) * (-1.)
 r(2,3,0) = 1.52 * AU * cos(1.)
 r(3,3,0) = 0
-r(1,4,0) = 5.2 * AU * sin(1.) * -1.
+r(1,4,0) = 5.2 * AU * sin(1.) * (-1.)
 r(2,4,0) = 5.2 * AU * cos(1.)
 r(3,4,0) = 0
-r(1,5,0) = 9.583 * AU * sin(1.) * -1.
+r(1,5,0) = 9.583 * AU * sin(1.) * (-1.)
 r(2,5,0) = 9.583 * AU * cos(1.)
 r(3,5,0) = 0
-r(1,6,0) = 19.201 * AU * sin(1.) * -1.
+r(1,6,0) = 19.201 * AU * sin(1.) * (-1.)
 r(2,6,0) = 19.201 * AU * cos(1.)
 r(3,6,0) = 0
-r(1,7,0) = 30.07 * AU * sin(1.) * -1.
+r(1,7,0) = 30.07 * AU * sin(1.) * (-1.)
 r(2,7,0) = 30.07 * AU * cos(1.)
 r(3,7,0) = 0
 
 !Initialize starting velocities
 !Negative ensures planets begin orbit counter-clockwise
 v(:,1,0) = 0
-v(1,2,0) = 29780. * -1. * cos(1.)
-v(2,2,0) = 29780. * -1. * sin(1.)
+v(1,2,0) = 29780. * (-1.) * cos(1.)
+v(2,2,0) = 29780. * (-1.) * sin(1.)
 v(3,2,0) = 0
-v(1,3,0) = 24070. * -1. * cos(1.)
-v(2,3,0) = 24070. * -1. * sin(1.)
+v(1,3,0) = 24070. * (-1.) * cos(1.)
+v(2,3,0) = 24070. * (-1.) * sin(1.)
 v(3,3,0) = 0
-v(1,4,0) = 13060. * -1. * cos(1.)
-v(2,4,0) = 13060. * -1. * sin(1.)
+v(1,4,0) = 13060. * (-1.) * cos(1.)
+v(2,4,0) = 13060. * (-1.) * sin(1.)
 v(3,4,0) = 0
-v(1,5,0) = 9680. * -1. * cos(1.)
-v(2,5,0) = 9680. * -1. * sin(1.)
+v(1,5,0) = 9680. * (-1.) * cos(1.)
+v(2,5,0) = 9680. * (-1.) * sin(1.)
 v(3,5,0) = 0
-v(1,6,0) = 6800. * -1. * cos(1.)
-v(2,6,0) = 6800. * -1. * sin(1.)
+v(1,6,0) = 6800. * (-1.) * cos(1.)
+v(2,6,0) = 6800. * (-1.) * sin(1.)
 v(3,6,0) = 0
-v(1,7,0) = 5430. * -1. * cos(1.)
-v(2,7,0) = 5430. * -1. * sin(1.)
+v(1,7,0) = 5430. * (-1.) * cos(1.)
+v(2,7,0) = 5430. * (-1.) * sin(1.)
 v(3,7,0) = 0
 
 !Find centre of mass and velocity
@@ -142,7 +142,7 @@ DO i = 1,n
 
 
                 !Need + so each object does not overwrite previous
-                a(:,i,0) = a(:,i,0) + (G * M(j) * (r(:,j,0) - r(:,i,0)) * (s_sq(i,j)**-1.5))
+                a(:,i,0) = a(:,i,0) + (G * M(j) * (r(:,j,0) - r(:,i,0)) * (s_sq(i,j)**(-1.5)))
 
             END DO
         END DO
@@ -227,7 +227,7 @@ DO k = 0,5
 
 
             !Find acceleration on object i in each dimension
-            a(:,i,0) = a(:,i,0) + G * M(j) * (r(:,j,0) - r(:,i,0))*(s_sq(i,j)**-1.5)
+            a(:,i,0) = a(:,i,0) + G * M(j) * (r(:,j,0) - r(:,i,0))*(s_sq(i,j)**(-1.5))
 
 
         END DO
@@ -287,7 +287,7 @@ DO
             s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
 
             !Calculate new acceleration
-            a(:,z,1) = a(:,z,1) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
+            a(:,z,1) = a(:,z,1) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**(-1.5))
         END DO
         !$OMP END DO
         !$OMP END PARALLEL
@@ -309,7 +309,7 @@ DO
             s_sq(z,j) = ((rtemp(1,j) - rtemp(1,z))**2 + (rtemp(2,j) - rtemp(2,z))**2 + (rtemp(3,j) - rtemp(3,z))**2)
 
             !Calculate corrected acceleration
-            a(:,z,2) = a(:,z,2) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**-1.5)
+            a(:,z,2) = a(:,z,2) + G * M(j) * (rtemp(:,j) - rtemp(:,z))*(s_sq(z,j)**(-1.5))
         END DO
 
         !$OMP END DO
