@@ -12,7 +12,7 @@ PROGRAM solar_sim
     CHARACTER(LEN = 1) :: lg
 
 !Allocate array space for the number of bodies
-n = 7
+n = 8
 ALLOCATE(r(1:3, 1:n, 0:2))
 ALLOCATE(v(1:3, 1:n, -6:2))
 ALLOCATE(a(1:3, 1:n, -6:2))
@@ -51,6 +51,7 @@ M(4) = 1.898e27
 M(5) = 5.683e26
 M(6) = 8.681e25
 M(7) = 1.024e26
+M(8) = 0.15 * 1.99e30
 
 !Empty array variables
 num_yr = 0
@@ -92,6 +93,9 @@ r(3,6,0) = 0
 r(1,7,0) = 30.07 * AU * sin(phi(6)) * (-1.)
 r(2,7,0) = 30.07 * AU * cos(phi(6))
 r(3,7,0) = 0
+r(1,8,0) = 50 * AU * sin(phi(7)) * (-1.)
+r(2,8,0) = 50 * AU * cos(phi(7))
+r(3,8,0) = 0
 
 !Initialize starting velocities
 !Negative ensures planets begin orbit counter-clockwise
@@ -113,6 +117,9 @@ v(2,6,0) = 6800. * (-1.) * sin(phi(5))
 v(3,6,0) = 0
 v(1,7,0) = 5430. * (-1.) * cos(phi(6))
 v(2,7,0) = 5430. * (-1.) * sin(phi(6))
+v(3,7,0) = 0
+v(1,7,0) = 82400. * (-1.) * cos(phi(7))
+v(2,7,0) = 82400. * (-1.) * sin(phi(7))
 v(3,7,0) = 0
 
 !Find centre of mass and velocity
@@ -204,6 +211,7 @@ IF (lg == 'y') THEN
     OPEN(8,file = 'Saturn_Motion.csv')
     OPEN(9,file = 'Uranus_Motion.csv')
     OPEN(10,file = 'Neptune_Motion.csv')
+    OPEN(11,file = 'Wandering_Motion.csv')
 END IF
 
 
@@ -380,7 +388,8 @@ DO
     END IF
 
     !Write every 500th step to log files
-    IF (MOD(stepno, 500) == 0) THEN
+    !IF (MOD(stepno, 500) == 0) THEN
+    IF (MAXVAL(deltat) == 0) THEN
         IF (lg == 'y') THEN
             DO i = 1,n
                 DO j = 1,n
@@ -396,6 +405,7 @@ DO
             WRITE(8,*) time, ',', dist(1,1,5), ',', dist(2,1,5), ',', dist(3,1,5)
             WRITE(9,*) time, ',', dist(1,1,6), ',', dist(2,1,6), ',', dist(3,1,6)
             WRITE(10,*) time, ',', dist(1,1,7), ',', dist(2,1,7), ',', dist(3,1,7)
+            WRITE(11,*) time, ',', dist(1,1,8), ',', dist(2,1,8), ',', dist(3,1,8)
         END IF
     END IF
 
@@ -418,6 +428,7 @@ IF (lg == 'y') THEN
     CLOSE(8)
     CLOSE(9)
     CLOSE(10)
+    CLOSE(11)
 END IF
 
 WRITE(6,*) "Final time (yrs)", time / 31536000

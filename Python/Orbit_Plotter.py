@@ -16,8 +16,8 @@ xura = yura = zura = np.array([]) #Arrays for Uranus
 xnep = ynep = znep = np.array([]) #Arrays for Neptune
 
 
-file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Sun_Motion.csv')
-#file = open('E:/Uni stuff not full of origin files/4th Year/Project/Sun_Motion.csv')
+#file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Sun_Motion.csv')
+file = open('E:/Uni stuff not full of origin files/4th Year/Project/Sun_Motion.csv')
 look = csv.reader(file,delimiter = ',')
 for row in look:
     xsun = np.append(xsun,float(row[1]))
@@ -25,8 +25,8 @@ for row in look:
     zsun = np.append(zsun,float(row[3]))
 file.close()
 
-file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Earth_Motion.csv')
-#file = open('E:/Uni stuff not full of origin files/4th Year/Project/Earth_Motion.csv')
+#file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Earth_Motion.csv')
+file = open('E:/Uni stuff not full of origin files/4th Year/Project/Earth_Motion.csv')
 look = csv.reader(file,delimiter = ',')
 for row in look:
     t = np.append(t,float(row[0]))
@@ -37,8 +37,8 @@ file.close()
 
 
 
-file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Jupiter_Motion.csv')
-#file = open('E:/Uni stuff not full of origin files/4th Year/Project/Jupiter_Motion.csv')
+#file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Jupiter_Motion.csv')
+file = open('E:/Uni stuff not full of origin files/4th Year/Project/Jupiter_Motion.csv')
 look = csv.reader(file,delimiter = ',')
 for row in look:
     xjup = np.append(xjup,float(row[1]))
@@ -46,8 +46,8 @@ for row in look:
     zjup = np.append(zjup,float(row[3]))
 file.close()
 
-file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Mars_Motion.csv')
-#file = open('E:/Uni stuff not full of origin files/4th Year/Project/Mars_Motion.csv')
+#file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Mars_Motion.csv')
+file = open('E:/Uni stuff not full of origin files/4th Year/Project/Mars_Motion.csv')
 look = csv.reader(file,delimiter = ',')
 for row in look:
     xmars = np.append(xmars,float(row[1]))
@@ -55,8 +55,8 @@ for row in look:
     zmars = np.append(zmars,float(row[3]))
 file.close()
 
-file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Saturn_Motion.csv')
-#file = open('E:/Uni stuff not full of origin files/4th Year/Project/Saturn_Motion.csv')
+#file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Saturn_Motion.csv')
+file = open('E:/Uni stuff not full of origin files/4th Year/Project/Saturn_Motion.csv')
 look = csv.reader(file,delimiter = ',')
 for row in look:
     xsat = np.append(xsat,float(row[1]))
@@ -64,8 +64,8 @@ for row in look:
     zsat = np.append(zsat,float(row[3]))
 file.close()
 
-file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Uranus_Motion.csv')
-#file = open('E:/Uni stuff not full of origin files/4th Year/Project/Uranus_Motion.csv')
+#file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Uranus_Motion.csv')
+file = open('E:/Uni stuff not full of origin files/4th Year/Project/Uranus_Motion.csv')
 look = csv.reader(file,delimiter = ',')
 for row in look:
     xura = np.append(xura,float(row[1]))
@@ -73,8 +73,8 @@ for row in look:
     zura = np.append(zura,float(row[3]))
 file.close()
 
-file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Neptune_Motion.csv')
-#file = open('E:/Uni stuff not full of origin files/4th Year/Project/Neptune_Motion.csv')
+#file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Neptune_Motion.csv')
+file = open('E:/Uni stuff not full of origin files/4th Year/Project/Neptune_Motion.csv')
 look = csv.reader(file,delimiter = ',')
 for row in look:
     xnep = np.append(xnep,float(row[1]))
