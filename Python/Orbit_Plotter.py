@@ -14,7 +14,7 @@ xmars = ymars = zmars = np.array([]) #Arrays for Mars
 xsat = ysat = zsat = np.array([]) #Arrays for Saturn
 xura = yura = zura = np.array([]) #Arrays for Uranus
 xnep = ynep = znep = np.array([]) #Arrays for Neptune
-
+xwander = ywander = zwander = np.array([]) #Arrays for Wandering star
 
 #file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Sun_Motion.csv')
 file = open('E:/Uni stuff not full of origin files/4th Year/Project/Sun_Motion.csv')
@@ -82,6 +82,15 @@ for row in look:
     znep = np.append(znep,float(row[3]))
 file.close()
 
+#file = open('E:/Uni stuff not full of origin files/4th Year/Project/GitHub/PHY61008/Wandering_Motion.csv')
+file = open('E:/Uni stuff not full of origin files/4th Year/Project/Wandering_Motion.csv')
+look = csv.reader(file,delimiter = ',')
+for row in look:
+    xwander = np.append(xwander,float(row[1]))
+    ywander = np.append(ywander,float(row[2]))
+    zwander = np.append(zwander,float(row[3]))
+file.close()
+
 
 fig = plt.figure(figsize =(20,20))
 image = fig.add_subplot(111, projection = '3d')
@@ -100,5 +109,6 @@ plt.plot(xmars*pc/AU, ymars*pc/AU, zmars*pc/AU,'-', c='r')
 plt.plot(xsat*pc/AU, ysat*pc/AU, zsat*pc/AU,'-', c='magenta')
 plt.plot(xura*pc/AU, yura*pc/AU, zura*pc/AU,'-', c='cyan')
 plt.plot(xnep*pc/AU, ynep*pc/AU, znep*pc/AU,'-', c='black')
+#plt.plot(xwander*pc/AU, ywander*pc/AU, zwander*pc/AU,'-', c='green')
 
 plt.show()

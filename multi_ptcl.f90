@@ -51,7 +51,7 @@ M(4) = 1.898e27
 M(5) = 5.683e26
 M(6) = 8.681e25
 M(7) = 1.024e26
-M(8) = 0.15 * 1.99e30
+M(8) = 0.5 * 1.99e30
 
 !Empty array variables
 num_yr = 0
@@ -71,7 +71,7 @@ counter = 0
 dt = 0
 deltat = 0
 rtemp = 0
-
+phi(:) = 1
 
 !Initialize starting positions
 r(:,1,0) = 0 !System centred around Sun
@@ -93,8 +93,8 @@ r(3,6,0) = 0
 r(1,7,0) = 30.07 * AU * sin(phi(6)) * (-1.)
 r(2,7,0) = 30.07 * AU * cos(phi(6))
 r(3,7,0) = 0
-r(1,8,0) = 50 * AU * sin(phi(7)) * (-1.)
-r(2,8,0) = 50 * AU * cos(phi(7))
+r(1,8,0) = 500 * AU * sin(phi(7)) * (-1.)
+r(2,8,0) = 500 * AU * cos(phi(7))
 r(3,8,0) = 0
 
 !Initialize starting velocities
@@ -118,8 +118,8 @@ v(3,6,0) = 0
 v(1,7,0) = 5430. * (-1.) * cos(phi(6))
 v(2,7,0) = 5430. * (-1.) * sin(phi(6))
 v(3,7,0) = 0
-v(1,7,0) = 82400. * (-1.) * cos(phi(7))
-v(2,7,0) = 82400. * (-1.) * sin(phi(7))
+v(1,7,0) = 5000. * (-1.) * cos(phi(7))
+v(2,7,0) = 5000. * (-1.) * sin(phi(7))
 v(3,7,0) = 0
 
 !Find centre of mass and velocity
@@ -395,7 +395,7 @@ DO
                 DO j = 1,n
                     IF (i==j) CYCLE
                     !Calculate absolute distance in each direction for logging files
-                    dist(:, i, j) = r(:,j,1) - r(:,i,1)
+                    dist(:, i, j) = r(:,j,0) - r(:,i,0)
                 END DO
             END DO
             WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1)
@@ -482,7 +482,7 @@ WRITE(6,*) "Percentage of Initial Energy Retained"
 WRITE(6,*) (E_1/E_0) * 100
 
 WRITE(6,*) "Absolute distance from the Sun (AU)"
-DO k = 1,7
+DO k = 1,n
     WRITE(6,*) sqrt(s_sq(1,k)) /AU
 END DO
 
