@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
-AU = 1.496e13 #in cm
-pc = 3.086e18
+AU = 1.496e11 #in cm
+#pc = 3.086e18
 
 t = np.array([]) #Create empty array for time
 xsun = ysun = zsun = np.array([]) #Create arrays for Sun position in each dimension
@@ -102,13 +102,13 @@ image.set_ylim(-40, 40)
 image.set_zlim(-40, 40)
 """
 
-plt.plot(xsun*pc/AU, ysun*pc/AU, zsun*pc/AU, '-', c='yellow')
-plt.plot(xear*pc/AU, year*pc/AU, zear*pc/AU,'-', c='b')
-plt.plot(xjup*pc/AU, yjup*pc/AU, zjup*pc/AU, '-', c='saddlebrown')
-plt.plot(xmars*pc/AU, ymars*pc/AU, zmars*pc/AU,'-', c='r')
-plt.plot(xsat*pc/AU, ysat*pc/AU, zsat*pc/AU,'-', c='magenta')
-plt.plot(xura*pc/AU, yura*pc/AU, zura*pc/AU,'-', c='cyan')
-plt.plot(xnep*pc/AU, ynep*pc/AU, znep*pc/AU,'-', c='black')
-#plt.plot(xwander*pc/AU, ywander*pc/AU, zwander*pc/AU,'-', c='green')
+plt.plot(xsun/AU, ysun/AU, zsun/AU, '-', c='yellow')
+plt.plot(xear/AU, year/AU, zear/AU,'-', c='b')
+plt.plot(xjup/AU, yjup/AU, zjup/AU, '-', c='saddlebrown')
+plt.plot(xmars/AU, ymars/AU, zmars/AU,'-', c='r')
+plt.plot(xsat/AU, ysat/AU, zsat/AU,'-', c='magenta')
+plt.plot(xura/AU, yura/AU, zura/AU,'-', c='cyan')
+plt.plot(xnep/AU, ynep/AU, znep/AU,'-', c='black')
+plt.plot(xwander/AU, ywander/AU, zwander/AU,'-', c='green')
 
 plt.show()

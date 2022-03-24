@@ -4,15 +4,16 @@ PROGRAM solar_sim
     !Declare variables
     IMPLICIT NONE
     DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:,:,:) :: r, v, a, a_int, v_int, dist
-    DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:,:) :: s_sq, rtemp
+    DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:,:) :: s_sq, rtemp, time_data, data_x, data_y, data_z
     DOUBLEPRECISION, ALLOCATABLE, DIMENSION(:) :: absv_sq, M, GPE, dt, deltat, counter, phi
     DOUBLEPRECISION :: COM(1:3), COV(1:3)
     DOUBLEPRECISION :: E_0, E_1, Mtot, AU, dtmin, G, time, num_yr, RelErr, Small, errcoeff, KE, pot, exittime, pi
-    INTEGER :: n, i, j, k, z, stepno !Define indexing integers
+    INTEGER :: n, i, j, k, z, stepno, data_num, write_out
     CHARACTER(LEN = 1) :: lg
 
 !Allocate array space for the number of bodies
 n = 8
+
 ALLOCATE(r(1:3, 1:n, 0:2))
 ALLOCATE(v(1:3, 1:n, -6:2))
 ALLOCATE(a(1:3, 1:n, -6:2))
@@ -37,11 +38,6 @@ RelErr = 5.e-13
 Small = 1.e-7
 errcoeff = 19./270. !Saves doing the calculation every loop
 pi = 3.14159
-
-!Initialize random angles
-!Call init_random_seed()
-!Call random_number(phi)
-!phi = phi * 2* pi !angle in radians
 
 !Masses in kg
 M(1) = 1.99e30
@@ -71,7 +67,9 @@ counter = 0
 dt = 0
 deltat = 0
 rtemp = 0
-phi = 1
+exittime = 0
+write_out = 0
+phi(:) = 1
 
 !Initialize starting positions
 r(:,1,0) = 0 !System centred around Sun
@@ -93,9 +91,10 @@ r(3,6,0) = 0
 r(1,7,0) = 30.07 * AU * sin(phi(6)) * (-1.)
 r(2,7,0) = 30.07 * AU * cos(phi(6))
 r(3,7,0) = 0
-r(1,8,0) = 500 * AU * sin(phi(7)) * (-1.)
-r(2,8,0) = 500 * AU * cos(phi(7))
+r(1,8,0) = 50 * AU
+r(2,8,0) = 50 * AU * (-1.)
 r(3,8,0) = 0
+
 
 !Initialize starting velocities
 !Negative ensures planets begin orbit counter-clockwise
@@ -118,12 +117,14 @@ v(3,6,0) = 0
 v(1,7,0) = 5430. * (-1.) * cos(phi(6))
 v(2,7,0) = 5430. * (-1.) * sin(phi(6))
 v(3,7,0) = 0
-v(1,7,0) = 5000. * (-1.) * cos(phi(7))
-v(2,7,0) = 5000. * (-1.) * sin(phi(7))
-v(3,7,0) = 0
+v(1,8,0) = 2500.
+v(2,8,0) = 0
+v(3,8,0) = 0
+
+
 
 !Find centre of mass and velocity
-DO i = 1, n-1
+DO i = 1, n-1 !ignore the Wandering Star
     COM(:) = COM(:) + r(:,i,0)*M(i)
     COV(:) = COV(:) + v(:,i,0)*M(i)
     Mtot = Mtot + M(i)
@@ -199,21 +200,16 @@ WRITE(6,*) "How many years would you like to simulate for?"
 READ *, num_yr !Store user input to calculate time to exit loop
 WRITE(6,*) ""
 
+data_num = 1000000 !Depends on how many years user simulates for
+ALLOCATE(data_x(1:n, 0:data_num))
+ALLOCATE(data_y(1:n, 0:data_num))
+ALLOCATE(data_z(1:n, 0:data_num))
+ALLOCATE(time_data(1:n, 0:data_num))
+write_out = 500
+
+
 !saves repeat calculation at end of ABM loop
 exittime = num_yr * 31536000.
-
-!Open Log Files to write data to if requested
-IF (lg == 'y') THEN
-    OPEN(2,file = 'Sun_Motion.csv')
-    OPEN(3,file = 'Earth_Motion.csv')
-    OPEN(4,file = 'Jupiter_Motion.csv')
-    OPEN(7,file = 'Mars_Motion.csv')
-    OPEN(8,file = 'Saturn_Motion.csv')
-    OPEN(9,file = 'Uranus_Motion.csv')
-    OPEN(10,file = 'Neptune_Motion.csv')
-    OPEN(11,file = 'Wandering_Motion.csv')
-END IF
-
 
 !================================================================================================================
 
@@ -262,6 +258,7 @@ deltat(:) = 0
 DO
     time = time + dtmin
     deltat(:) = deltat(:) + dtmin
+    !indiv_time(:) = indiv_time(:) + dt(:)
 
     DO z = 1,n
         !skip bodies when their individual timestep has not been reached
@@ -387,30 +384,20 @@ DO
         dtmin = MINVAL(dt)
     END IF
 
-    !Write every 500th step to log files
-    IF (MOD(stepno, 500) == 0) THEN
-
-    !Write every synched step to log files
-    !IF (MAXVAL(deltat) == 0) THEN
-        IF (lg == 'y') THEN
-            !WRITE(6,*) stepno
+    !Write every write_out step to log files
+    IF (MOD(stepno, write_out) == 0) THEN
             DO i = 1,n
                 DO j = 1,n
                     IF (i==j) CYCLE
-                    !Calculate absolute distance in each direction for logging files
-                    !dist(:, i, j) = r(:,j,0) - r(:,i,0)
+                    !Calculate absolute between bodies for each body for logging files
                     dist(:, i, j) = rtemp(:,j) - rtemp(:,i)
                 END DO
+                !Store absolute distance to sun
+                data_x(i,stepno/write_out) = dist(1,1,i)
+                data_y(i,stepno/write_out) = dist(2,1,i)
+                data_z(i,stepno/write_out) = dist(3,1,i)
+                time_data(i,stepno/write_out) = time
             END DO
-            WRITE(2,*) time, ',', dist(1,1,1), ',', dist(2,1,1), ',', dist(3,1,1)
-            WRITE(3,*) time, ',', dist(1,1,2), ',', dist(2,1,2), ',', dist(3,1,2)
-            WRITE(4,*) time, ',', dist(1,1,3), ',', dist(2,1,3), ',', dist(3,1,3)
-            WRITE(7,*) time, ',', dist(1,1,4), ',', dist(2,1,4), ',', dist(3,1,4)
-            WRITE(8,*) time, ',', dist(1,1,5), ',', dist(2,1,5), ',', dist(3,1,5)
-            WRITE(9,*) time, ',', dist(1,1,6), ',', dist(2,1,6), ',', dist(3,1,6)
-            WRITE(10,*) time, ',', dist(1,1,7), ',', dist(2,1,7), ',', dist(3,1,7)
-            WRITE(11,*) time, ',', dist(1,1,8), ',', dist(2,1,8), ',', dist(3,1,8)
-        END IF
     END IF
 
     !Update elapsed time
@@ -423,8 +410,32 @@ DO
     END IF
 END DO
 
-!Shut all logging files
+write(6,*) stepno
+
 IF (lg == 'y') THEN
+    !Open log files to write data to if requested
+    OPEN(2,file = 'Sun_Motion.csv')
+    OPEN(3,file = 'Earth_Motion.csv')
+    OPEN(4,file = 'Jupiter_Motion.csv')
+    OPEN(7,file = 'Mars_Motion.csv')
+    OPEN(8,file = 'Saturn_Motion.csv')
+    OPEN(9,file = 'Uranus_Motion.csv')
+    OPEN(10,file = 'Neptune_Motion.csv')
+    OPEN(11,file = 'Wandering_Motion.csv')
+
+    !Write data to log files
+    DO i = 0, stepno/write_out
+        WRITE(2,*) time_data(1,i), ',', data_x(1,i), ',', data_y(1,i), ',', data_z(1,i)
+        WRITE(3,*) time_data(2,i), ',', data_x(2,i), ',', data_y(2,i), ',', data_z(2,i)
+        WRITE(4,*) time_data(3,i), ',', data_x(3,i), ',', data_y(3,i), ',', data_z(3,i)
+        WRITE(7,*) time_data(4,i), ',', data_x(4,i), ',', data_y(4,i), ',', data_z(4,i)
+        WRITE(8,*) time_data(5,i), ',', data_x(5,i), ',', data_y(5,i), ',', data_z(5,i)
+        WRITE(9,*) time_data(6,i), ',', data_x(6,i), ',', data_y(6,i), ',', data_z(6,i)
+        WRITE(10,*) time_data(7,i), ',', data_x(7,i), ',', data_y(7,i), ',', data_z(7,i)
+        WRITE(11,*) time_data(8,i), ',', data_x(8,i), ',', data_y(8,i), ',', data_z(8,i)
+    END DO
+
+    !Shut log files
     CLOSE(2)
     CLOSE(3)
     CLOSE(4)
@@ -498,28 +509,6 @@ DO i = 1,n
 END DO
 
 WRITE(6,*) "Energy Ratio", KE / pot
-
-
-
-
-    !Subroutine to seed random number generation
-    !From https://gcc.gnu.org/onlinedocs/gcc-4.6.1/gfortran/RANDOM_005fSEED.html
-    Contains
-    subroutine init_random_seed()
-
-      INTEGER :: i, n, clock
-      INTEGER, DIMENSION(:), ALLOCATABLE :: seed
-
-      CALL RANDOM_SEED(size = n)
-      ALLOCATE(seed(n))
-
-      CALL SYSTEM_CLOCK(COUNT=clock)
-
-      seed = clock + 37 * (/ (i - 1, i = 1, n) /)
-      CALL RANDOM_SEED(PUT = seed)
-
-      DEALLOCATE(seed)
-    end
 
 
 END PROGRAM solar_sim
